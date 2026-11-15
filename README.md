@@ -21,10 +21,11 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | Scaffold | Sets up pnpm + Slidev + `seriph` theme, with Playwright allowed to install so PDF export works |
 | Authoring | Uses a two-column layout, `<Pic>` photo cards, and a `<Credit>` attribution line for Wikimedia Commons photos |
 | Base path | Sends every `/...` image through `asset()` / `$asset()` so the deck still works under `/<repo>/` |
+| Advanced features | Applies slide transitions, one-by-one reveals (`v-clicks`), hand-drawn emphasis on key numbers (`v-mark`), and a QR code to the live deck. Speaker notes are proposed but only written from the speaker's own words |
 | Journey map | Optional animated Taiwan itinerary map that moves one leg per click |
 | Publish | GitHub Pages workflow (correct `--base`, PDF export, SPA `404.html`), or Netlify CLI |
 | Verify | Checks the live site with `curl` instead of trusting a green Actions run |
-| Content rule | **The presenter's content comes first**: it changes layout and visuals only, never facts, wording, or slide order |
+| Content rule | **The presenter's content comes first**: it changes layout, visuals, and pacing only, never facts, wording, or slide order |
 
 ## What's here
 
