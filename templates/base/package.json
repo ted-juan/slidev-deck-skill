@@ -1,0 +1,20 @@
+{
+  "name": "__DECK_NAME__",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "slidev build --download",
+    "dev": "slidev --open",
+    "export": "slidev export",
+    "deploy:netlify": "slidev build --download && npx -y netlify-cli deploy --prod --dir dist"
+  },
+  "dependencies": {
+    "@slidev/cli": "^52.20.1",
+    "@slidev/theme-seriph": "latest",
+    "vue": "^3.5.44"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.64.1"
+  },
+  "packageManager": "pnpm@__PNPM_VERSION__"
+}
