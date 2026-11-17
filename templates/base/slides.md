@@ -5,6 +5,11 @@ class: text-center
 title: __DECK_TITLE__
 exportFilename: __DECK_SLUG__
 transition: slide-left
+# CJK text: Noto Sans TC (Traditional) / SC (Simplified) / JP. Latin-only decks may drop this.
+fonts:
+  sans: Noto Sans TC
+  serif: Noto Serif TC
+  mono: Fira Code
 ---
 
 # __DECK_TITLE__

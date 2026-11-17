@@ -27,7 +27,9 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | Advanced features | Applies slide transitions, one-by-one reveals (`v-clicks`), hand-drawn emphasis on key numbers (`v-mark`), and a QR code to the live deck. Speaker notes are proposed but only written from the speaker's own words |
 | Journey map | Optional animated Taiwan itinerary map that moves one leg per click |
 | Publish | GitHub Pages workflow (correct `--base`, PDF export, SPA `404.html`), or Netlify CLI |
-| Layout check | Exports every slide as PNG and looks at it, so cut-off tables and diagrams are caught before presenting |
+| Wording check | `check-wording.mjs` proves every sentence of the draft is still in the deck, in order, and lists every word the deck added |
+| Layout check | `check-overflow.mjs` measures every slide in a real browser and names the element that runs off the edge; then a PNG look for what can't be measured |
+| Editable PPTX | `slidev export --format pptx-editable` for colleagues who edit in PowerPoint (real text boxes, not pictures) |
 | Verify | Checks the live site with `curl` instead of trusting a green Actions run |
 | Content rule | **The presenter's content comes first**: it changes layout, visuals, and pacing only, never facts, wording, or slide order |
 
@@ -36,6 +38,8 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | Path | Purpose |
 |---|---|
 | `SKILL.md` | Instructions the agent reads (workflow, conventions, trap list) |
+| `scripts/check-wording.mjs` | Draft vs deck: missing, reordered and added text. Node ≥ 18, no dependencies |
+| `scripts/check-overflow.mjs` | Finds slides whose content runs off the edge, using the deck's own Slidev + Playwright |
 | `scripts/find-image.mjs` | Picture finder: Wikimedia Commons search + download, or AI generation; prints a ready `<Credit>` line. Node ≥ 18, no dependencies |
 | `templates/base/` | Project skeleton: `slides.md`, `style.css`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/`, `components/Pic.vue`, `components/Credit.vue`, `.github/workflows/deploy.yml` |
 | `templates/journey-map/` | Optional: `JourneyMap.vue`, pre-projected Taiwan basemap (`taiwan-map.json`, ~840 KB), sample `journeys.example.ts` |
@@ -66,6 +70,13 @@ rm -rf .agents/skills/slidev-deck/.git   # commit it as plain files, not a submo
 | OpenAI Codex | `.agents/skills/` | — |
 
 Folder names change between agent versions. If a skill isn't detected, check that agent's current docs.
+
+**Recommended companion:** the official Slidev skill (syntax reference for layouts, components, animations, export flags). This skill defers to it for Slidev syntax and keeps the workflow.
+
+```bash
+npx skills add slidevjs/slidev
+# or copy https://github.com/slidevjs/slidev/tree/main/skills/slidev to ~/.claude/skills/slidev
+```
 
 To update a global install:
 

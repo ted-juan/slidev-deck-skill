@@ -1,6 +1,6 @@
 ---
 name: slidev-deck
-description: Build, polish, and publish a presentation as a Slidev web deck (Markdown → website + downloadable PDF), deployed to GitHub Pages or Netlify. Covers the project skeleton and a starter slides.md (pnpm, seriph theme, playwright PDF export), an automatic image plan for every slide that needs a visual (free-licence Wikimedia Commons photos with credit lines, agent-drawn diagrams/charts, or AI-generated images via the agent's own image tool or OpenAI/Gemini when asked), reusable components (Pic photo card, Credit attribution, optional animated Taiwan JourneyMap), advanced Slidev features applied without touching the talk's wording (transitions, v-clicks reveals, v-mark emphasis, QR code; speaker notes only with the speaker's input), the base-path asset() helper that keeps images working under /<repo>/, a GitHub Pages workflow that actually honours --base, and the traps that produced blank pages / broken images / 404 on /2. Also covers fixing someone else's deployed deck without touching their speaking content. Use when the user asks to make/beautify slides or a presentation (簡報/投影片), turn a Markdown or text draft into a deck, publish slides to GitHub Pages or Netlify, or find or generate pictures, diagrams or charts for slides, or debug a Slidev deck that shows a blank page or missing images once deployed.
+description: Build, polish, and publish a presentation as a Slidev web deck (Markdown → website + downloadable PDF), deployed to GitHub Pages or Netlify, plus an editable PowerPoint (pptx-editable) for people who edit in PowerPoint. Covers the project skeleton and a starter slides.md (pnpm, seriph theme, playwright PDF export), an automatic image plan for every slide that needs a visual (free-licence Wikimedia Commons photos with credit lines, agent-drawn diagrams/charts, or AI-generated images via the agent's own image tool or OpenAI/Gemini when asked), reusable components (Pic photo card, Credit attribution, optional animated Taiwan JourneyMap), advanced Slidev features applied without touching the talk's wording (transitions, v-clicks reveals, v-mark emphasis, QR code; speaker notes only with the speaker's input), the base-path asset() helper that keeps images working under /<repo>/, a GitHub Pages workflow that actually honours --base, and scripts that prove no word of the talk changed (check-wording) and no slide overflows (check-overflow), and the traps that produced blank pages / broken images / 404 on /2. Also covers fixing someone else's deployed deck without touching their speaking content. Use when the user asks to make/beautify slides or a presentation (簡報/投影片), turn a Markdown or text draft into a deck, publish slides to GitHub Pages or Netlify, or find or generate pictures, diagrams or charts for slides, or debug a Slidev deck that shows a blank page or missing images once deployed.
 ---
 
 # Slidev deck: build → polish → publish
@@ -11,6 +11,14 @@ https://ted-juan.github.io/six-grand-endless-wonders/). When in doubt, read
 how it does something there (e.g. its raw `slides.md` via
 `https://raw.githubusercontent.com/ted-juan/six-grand-endless-wonders/main/slides.md`)
 before inventing a new way.
+
+**Works with the official `slidev` skill.** If it is installed (from
+https://github.com/slidevjs/slidev/tree/main/skills/slidev), use it as the
+**syntax reference**: layouts, components, animations, code features, export
+flags. This skill owns the **workflow**: the content rule, pictures, layout
+checks, publishing and the traps below. When the two disagree on Slidev
+syntax, the official skill wins (it tracks the current release); when they
+disagree on process, this one wins.
 
 ## Golden rule: the speaker's content wins
 
@@ -27,6 +35,16 @@ The words on the slides are the presenter's. Polish **presentation**
   deck").
 - After editing, `git diff slides.md` and confirm every changed line is one
   you meant to change.
+- When the deck was made from a draft, **prove it** with
+  `scripts/check-wording.mjs` (Node ≥ 18, no install):
+  ```bash
+  node <skill>/scripts/check-wording.mjs slides.original.md slides.md
+  ```
+  `MISSING` must be 0 (exit code 1 otherwise). `OUT OF ORDER` lists chunks
+  that moved: a label moved into a kicker is fine, a moved paragraph is not.
+  `ADDED` lists every piece of text the deck has that the draft doesn't
+  (cover title, kickers, picture labels, credits): show it to the user
+  and get each one confirmed.
 
 ## 1. Scaffold
 
@@ -51,6 +69,15 @@ original as `slides.original.md`), add pictures (§2b), `pnpm dev` to preview.
 
 - Headmatter: `theme: seriph`, a full-bleed cover `background:`, `title:`,
   and `exportFilename:` (becomes the PDF name on the download button).
+- **Fonts**: for Chinese (or mixed Chinese/English) decks set
+  `fonts: { sans: Noto Sans TC, serif: Noto Serif TC, mono: Fira Code }`
+  (Google Fonts, auto-loaded; use `SC` for Simplified, `JP` for Japanese).
+  Without it CJK text falls back to whatever the viewer's system has. The
+  starter `slides.md` already sets it. Fonts change text width, so run the
+  overflow check (§2d) after changing them.
+- Too much content for one slide: first `zoom: 0.9` (or `0.8`) in that
+  slide's frontmatter, which scales the whole slide; then `class: text-sm` /
+  `text-xs`; then split the slide. Never cut words to make it fit.
 - Slide header pattern: `### Section · Subtitle` kicker above `## Title`.
 - Dense content slides: `class: text-sm` + a two-column
   `grid grid-cols-[1fr_230px]` with bullets left and a stack of `<Pic>` right.
@@ -181,33 +208,36 @@ Rules of thumb:
   `<span v-mark…>`), frontmatter, and the QR image. No word of the talk
   changed.
 
-## 2d. Check every slide fits — export PNGs and look
+## 2d. Check every slide fits — measure, then look
 
 `pnpm dev` hides problems you only see at the real slide size. Before
-calling the deck done (and after adding pictures):
+calling the deck done (and after adding pictures or changing fonts), run
+`scripts/check-overflow.mjs` in the deck directory. It starts the deck's
+dev server, opens every slide in its final click state with the deck's
+`playwright-chromium`, and lists each element that runs past the bottom or
+right edge (exit code 1 if any):
 
 ```bash
-pnpm exec slidev export --format png --output shots            # all slides
-pnpm exec slidev export --format png --output shots --range 2,13  # just some
+cd <deck> && node <skill>/scripts/check-overflow.mjs      # ~1 s per slide
 ```
 
-Open the PNGs (the agent can read images) and check: nothing cut off at the
-bottom or right edge, diagrams readable, `<Credit>` not covering content.
-To list suspects quickly in a large deck (needs Python + Pillow), flag
-slides whose bottom 5% has ink; full-bleed backgrounds and `<Credit>` lines
-also trigger it, so still look at each flagged one:
+```
+slide 4  2.1 與其他工具比較
+   63px past bottom: <table> HermesOpenClawOpenCodeClaude Code...
+   147px past bottom: <p> † Claude Code 具備 CLAUDE.md ...
+```
+
+Fix in this order, re-running after each: `zoom: 0.9`/`0.8` in that slide's
+frontmatter → `class: text-sm`/`text-xs` → move a wide diagram below the
+text → split the slide (same order, same words).
+
+Then **look** at the slides the script can't judge (diagrams readable,
+photos well cropped, `<Credit>` not covering content):
 
 ```bash
-python3 -c "
-from PIL import Image; import glob
-for f in sorted(glob.glob('shots/*.png'), key=lambda x:int(x.split('/')[-1][:-4])):
-    im=Image.open(f).convert('L'); w,h=im.size; px=list(im.crop((0,int(h*.95),w,h)).getdata())
-    bg=max(set(px),key=px.count)
-    if sum(abs(p-bg)>60 for p in px)>50: print('check', f)"
+pnpm exec slidev export --format png --output shots --range 2,13   # open the PNGs
 ```
 
-Fix overflow by splitting the slide (keep the original order and words),
-adding `class: text-sm`/`text-xs`, or moving a diagram below the text.
 Delete `shots/` afterwards (don't commit it).
 
 ## 3. Optional: animated journey map (Taiwan itineraries)
@@ -240,6 +270,25 @@ outlines, ~840 KB), and `data/journeys.example.ts` → `data/journeys.ts`.
    fails. After enabling, re-run the failed workflow.
 4. Verify (see §5). URL: `https://<owner>.github.io/<repo>/`.
 
+### Editable PowerPoint (for people who edit in PowerPoint)
+
+Slidev can rebuild the slides as native PowerPoint shapes with real,
+selectable text (tested with Slidev 52.20):
+
+```bash
+pnpm exec slidev export --format pptx-editable --with-clicks=false \
+     --output <exportFilename>-editable.pptx
+```
+
+- `--with-clicks=false` matters: PPTX formats default to one page per click
+  (a 35-slide deck became 64 pages).
+- Mermaid diagrams, SVGs, KaTeX and gradients stay pictures; photos and
+  tables come through. Fonts are named, not embedded: the recipient needs
+  Noto Sans TC (or whatever `fonts:` sets) installed, else PowerPoint
+  substitutes one.
+- The web deck and `slides.md` stay the source of truth; edits made in the
+  PPTX don't flow back.
+
 ### Netlify (alternative)
 
 `pnpm run deploy:netlify` (first run: `npx netlify-cli login`, then pick or
@@ -271,7 +320,7 @@ body contains the deck `<title>`). Actions status without `gh`:
 | Opening / refreshing `/2` gives GitHub's 404 page | GitHub Pages has no SPA rewrite | `cp dist/index.html dist/404.html` in the workflow |
 | Build job ✅, deploy job ❌ | Pages not enabled / Source not set to GitHub Actions | User flips Settings → Pages → Source: GitHub Actions, re-run |
 | `pnpm install` errors about build scripts, or PDF export can't find a browser | pnpm blocks playwright's postinstall | `allowBuilds: playwright-chromium: true` in `pnpm-workspace.yaml`; CI also runs `playwright install --with-deps chromium` |
-| A long table or text runs off the bottom of the slide; `class: text-xs` changes nothing | seriph's table cell padding and element font sizes override the class | Copy `templates/base/style.css`; split the slide if it still overflows (§2d) |
+| A long table or text runs off the bottom of the slide; `class: text-xs` changes nothing | seriph's table cell padding and element font sizes override the class | `zoom: 0.8` in that slide's frontmatter fixes most; keep `templates/base/style.css` for compact tables; split the slide if it still overflows. `check-overflow.mjs` finds them (§2d) |
 | A Mermaid diagram is cut off at the right/bottom | Wide flowchart inside a narrow grid column | Put it full-width below the text, `{scale: 0.6}` (§2b Step 4) |
 | `pnpm -v` after `corepack enable pnpm` fails: `Cannot find module .../corepack/v1/pnpm/<ver>/bin/pnpm.cjs` | Older corepack (e.g. 0.31 in Node 22.14) can't run pnpm ≥ 11's package layout | `corepack disable pnpm && npm i -g pnpm` (with nvm this needs no sudo) |
 | `gh: command not found`; `sudo` via `!` says "a terminal is required" | gh not installed; `!` commands have no TTY for the sudo password | Repo creation on github.com, or the user installs gh in their own terminal |
