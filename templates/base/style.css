@@ -1,0 +1,9 @@
+/* Compact tables: seriph's default cell padding is too tall for dense slides */
+.slidev-layout td,
+.slidev-layout th {
+  padding-top: 0.3em;
+  padding-bottom: 0.3em;
+}
+/* Make class: text-sm / text-xs actually shrink body text and tables */
+.slidev-layout.text-sm :is(p, li, td, th, blockquote) { font-size: 0.95rem; line-height: 1.5; }
+.slidev-layout.text-xs :is(p, li, td, th, blockquote) { font-size: 0.8rem; line-height: 1.4; }

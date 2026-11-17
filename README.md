@@ -27,6 +27,7 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | Advanced features | Applies slide transitions, one-by-one reveals (`v-clicks`), hand-drawn emphasis on key numbers (`v-mark`), and a QR code to the live deck. Speaker notes are proposed but only written from the speaker's own words |
 | Journey map | Optional animated Taiwan itinerary map that moves one leg per click |
 | Publish | GitHub Pages workflow (correct `--base`, PDF export, SPA `404.html`), or Netlify CLI |
+| Layout check | Exports every slide as PNG and looks at it, so cut-off tables and diagrams are caught before presenting |
 | Verify | Checks the live site with `curl` instead of trusting a green Actions run |
 | Content rule | **The presenter's content comes first**: it changes layout, visuals, and pacing only, never facts, wording, or slide order |
 
@@ -36,7 +37,7 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 |---|---|
 | `SKILL.md` | Instructions the agent reads (workflow, conventions, trap list) |
 | `scripts/find-image.mjs` | Picture finder: Wikimedia Commons search + download, or AI generation; prints a ready `<Credit>` line. Node ≥ 18, no dependencies |
-| `templates/base/` | Project skeleton: `slides.md`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/`, `components/Pic.vue`, `components/Credit.vue`, `.github/workflows/deploy.yml` |
+| `templates/base/` | Project skeleton: `slides.md`, `style.css`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/`, `components/Pic.vue`, `components/Credit.vue`, `.github/workflows/deploy.yml` |
 | `templates/journey-map/` | Optional: `JourneyMap.vue`, pre-projected Taiwan basemap (`taiwan-map.json`, ~840 KB), sample `journeys.example.ts` |
 
 ## Install
@@ -104,6 +105,8 @@ Real places, people and events always get a real photo, never an AI image.
 | Opening or refreshing `/2` gives a 404 | GitHub Pages has no SPA rewrite, so no `404.html` fallback |
 | Build job passes, deploy job fails | Pages Source is not set to **GitHub Actions** in repo Settings |
 | PDF export can't find a browser | pnpm blocked Playwright's postinstall script |
+| Tables or diagrams cut off at the slide edge | seriph's tall table rows; wide Mermaid charts in a narrow column |
+| `pnpm` fails after `corepack enable pnpm` | Older corepack can't run pnpm ≥ 11 |
 
 `SKILL.md` lists the full cause and fix for each.
 

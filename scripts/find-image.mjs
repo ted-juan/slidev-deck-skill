@@ -15,7 +15,7 @@
 // Node >= 18, no npm dependencies.
 
 import { parseArgs } from 'node:util'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
 
 const UA = 'slidev-deck-skill/1.0 (https://github.com/ted-juan/slidev-deck-skill)'
@@ -79,13 +79,27 @@ async function commonsCandidates(query, width) {
 
 const commonsCredit = c => `${c.author} (${c.license}), via Wikimedia Commons`
 
+// Saved file extension must match the real format (Commons serves PNG thumbnails for PNG originals).
+const EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }
+function withExt(out, ext) {
+  const cur = extname(out).toLowerCase()
+  if (cur === ext || (ext === '.jpg' && cur === '.jpeg')) return out
+  const fixed = out.slice(0, out.length - extname(out).length) + ext
+  if (!noted.has(fixed)) console.error(`note: file is ${ext.slice(1).toUpperCase()}, saving as ${fixed}`)
+  noted.add(fixed)
+  return fixed
+}
+const noted = new Set()
+
 async function download(url, out) {
   const r = await fetch(url, { headers: { 'User-Agent': UA } })
   if (!r.ok) throw new Error(`download HTTP ${r.status}: ${url}`)
   const buf = Buffer.from(await r.arrayBuffer())
-  await mkdir(dirname(out), { recursive: true })
-  await writeFile(out, buf)
-  return buf.length
+  const ext = EXT[(r.headers.get('content-type') ?? '').split(';')[0].trim()]
+  const path = ext ? withExt(out, ext) : out
+  await mkdir(dirname(path), { recursive: true })
+  await writeFile(path, buf)
+  return { bytes: buf.length, path }
 }
 
 async function fromCommons() {
@@ -99,15 +113,16 @@ async function fromCommons() {
   }
   const c = list[Number(a.pick)]
   if (!c) throw new Error(`--pick ${a.pick} out of range (${list.length} candidates)`)
-  let bytes = await download(c.url, a.out)
-  // Commons thumbnails are already JPEG-compressed; shrink the width if still too heavy.
+  let { bytes, path } = await download(c.url, a.out)
+  // Commons thumbnails are already compressed; shrink the width if still too heavy.
   while (bytes > MAX_BYTES && width > 900) {
     width = Math.round(width * 0.75)
     const [again] = (await commonsCandidates(a.query, width)).filter(x => x.page === c.page)
-    if (!again) break
-    bytes = await download(again.url, a.out)
+    if (!again) break;
+    ({ bytes, path } = await download(again.url, a.out))
   }
-  return { source: 'commons', out: a.out, bytes, title: c.title, page: c.page,
+  if (bytes > MAX_BYTES) console.error(`warning: ${path} is ${Math.round(bytes / 1024)} KB; compress it before committing`)
+  return { source: 'commons', out: path, bytes, title: c.title, page: c.page,
     author: c.author, license: c.license, credit: commonsCredit(c) }
 }
 
@@ -146,15 +161,26 @@ async function fromAI() {
   else {
     throw new Error('AI source needs OPENAI_API_KEY or GEMINI_API_KEY in the environment')
   }
-  let out = a.out
-  if (extname(out).toLowerCase() !== ext && !(ext === '.jpg' && /\.jpe?g$/i.test(out))) {
-    out = out.slice(0, out.length - extname(out).length) + ext
-    console.error(`note: provider returned ${ext}, saved as ${out}`)
-  }
+  const out = withExt(a.out, ext)
   await mkdir(dirname(out), { recursive: true })
   await writeFile(out, buf)
   if (buf.length > MAX_BYTES) console.error(`warning: ${out} is ${Math.round(buf.length / 1024)} KB; compress it before committing`)
   return { source: 'ai', out, bytes: buf.length, model, prompt, credit: `AI-generated image (${model})` }
+}
+
+// ------------------------------------------------------------------ credits log lock
+// Several runs in parallel (e.g. cover + closing image) must not overwrite each other's entry.
+async function withLock(lock, fn) {
+  for (let i = 0; ; i++) {
+    try { await mkdir(lock); break } // mkdir is atomic: only one process wins
+    catch (e) {
+      if (e.code !== 'EEXIST') throw e
+      if (i >= 100) { console.error(`warning: removing stale lock ${lock}`); await rm(lock, { recursive: true, force: true }); continue }
+      await new Promise(r => setTimeout(r, 100))
+    }
+  }
+  try { return await fn() }
+  finally { await rm(lock, { recursive: true, force: true }) }
 }
 
 // ------------------------------------------------------------------ main
@@ -168,10 +194,14 @@ try {
   }
   if (!res) res = await fromAI()
 
-  let log = []
-  try { log = JSON.parse(await readFile(a.credits, 'utf8')) } catch {}
-  log = log.filter(e => e.out !== res.out).concat({ ...res, date: new Date().toISOString().slice(0, 10) })
-  await writeFile(a.credits, `${JSON.stringify(log, null, 2)}\n`)
+  await withLock(`${a.credits}.lock`, async () => {
+    let log = []
+    try { log = JSON.parse(await readFile(a.credits, 'utf8')) } catch {}
+    log = log.filter(e => e.out !== res.out).concat({ ...res, date: new Date().toISOString().slice(0, 10) })
+    const tmp = `${a.credits}.${process.pid}.tmp`
+    await writeFile(tmp, `${JSON.stringify(log, null, 2)}\n`)
+    await rename(tmp, a.credits) // atomic replace
+  })
 
   console.log(JSON.stringify(res, null, 2))
 }

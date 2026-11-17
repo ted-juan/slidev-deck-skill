@@ -41,6 +41,7 @@ Copy `templates/base/` from this skill into the new project dir:
 | `components/Pic.vue` | Photo card with corner label: `<Pic src="/photos/x.jpg" label="..." class="h-28" />` |
 | `components/Credit.vue` | Small bottom-right attribution line: `<Credit>Author (CC BY-SA 4.0), via Wikimedia Commons</Credit>` |
 | `.github/workflows/deploy.yml` | GitHub Pages deploy (see §4) |
+| `style.css` | Compact table rows, and makes `class: text-sm` / `text-xs` really shrink body text and tables (seriph's defaults are too tall: a 10-row table runs off the slide). Slidev loads it automatically |
 | `slides.md` | Starter deck: cover, two-column content slide with `<Pic>` stack, single-photo slide, closing slide with QR. Replace every `__PLACEHOLDER__`; delete slide types the talk doesn't need |
 
 Then `pnpm install`, put the speaker's draft into `slides.md` (keep the
@@ -137,7 +138,13 @@ node <skill>/scripts/find-image.mjs --source ai \
 2. Insert with `<Pic src="/photos/x.jpg" label="..." />` (label = the
    slide's own wording) or `<img :src="$asset('/diagrams/x.svg')" />`, and add
    the `credit` string to the slide's `<Credit>`.
-3. Adding visuals is layout, so the content rule still holds:
+3. **Mermaid layout:** a wide diagram (`flowchart LR` with 4+ nodes, or
+   two subgraphs) does not fit a narrow grid column; it spills off the
+   right/bottom edge. Put it full-width **below** the text, use
+   `direction LR` inside subgraphs, and shrink with
+   ```` ```mermaid {scale: 0.6} ````. Subgraphs in an `LR` chart stack in
+   reverse: declare the one that should appear on top last.
+4. Adding visuals is layout, so the content rule still holds:
    `git diff slides.md` shows only `<Pic>`/`<img>`/`<Credit>`/Mermaid/frontmatter
    lines. If a slide has no room for a picture without shrinking the text,
    say so and skip it rather than cutting words.
@@ -169,10 +176,39 @@ Rules of thumb:
 - The PDF export shows each slide in its **final** click state, so reveals
   don't hide anything from readers of the PDF.
 - Not for non-technical talks: Shiki Magic Move, Monaco editor, Twoslash,
-  code-line highlighting. Mermaid only if the content already has a diagram.
+  code-line highlighting. Mermaid only for the diagrams in the §2b image plan.
 - After applying, `git diff slides.md` must show only wrappers (`<v-clicks>`,
   `<span v-mark…>`), frontmatter, and the QR image. No word of the talk
   changed.
+
+## 2d. Check every slide fits — export PNGs and look
+
+`pnpm dev` hides problems you only see at the real slide size. Before
+calling the deck done (and after adding pictures):
+
+```bash
+pnpm exec slidev export --format png --output shots            # all slides
+pnpm exec slidev export --format png --output shots --range 2,13  # just some
+```
+
+Open the PNGs (the agent can read images) and check: nothing cut off at the
+bottom or right edge, diagrams readable, `<Credit>` not covering content.
+To list suspects quickly in a large deck (needs Python + Pillow), flag
+slides whose bottom 5% has ink; full-bleed backgrounds and `<Credit>` lines
+also trigger it, so still look at each flagged one:
+
+```bash
+python3 -c "
+from PIL import Image; import glob
+for f in sorted(glob.glob('shots/*.png'), key=lambda x:int(x.split('/')[-1][:-4])):
+    im=Image.open(f).convert('L'); w,h=im.size; px=list(im.crop((0,int(h*.95),w,h)).getdata())
+    bg=max(set(px),key=px.count)
+    if sum(abs(p-bg)>60 for p in px)>50: print('check', f)"
+```
+
+Fix overflow by splitting the slide (keep the original order and words),
+adding `class: text-sm`/`text-xs`, or moving a diagram below the text.
+Delete `shots/` afterwards (don't commit it).
 
 ## 3. Optional: animated journey map (Taiwan itineraries)
 
@@ -235,6 +271,9 @@ body contains the deck `<title>`). Actions status without `gh`:
 | Opening / refreshing `/2` gives GitHub's 404 page | GitHub Pages has no SPA rewrite | `cp dist/index.html dist/404.html` in the workflow |
 | Build job ✅, deploy job ❌ | Pages not enabled / Source not set to GitHub Actions | User flips Settings → Pages → Source: GitHub Actions, re-run |
 | `pnpm install` errors about build scripts, or PDF export can't find a browser | pnpm blocks playwright's postinstall | `allowBuilds: playwright-chromium: true` in `pnpm-workspace.yaml`; CI also runs `playwright install --with-deps chromium` |
+| A long table or text runs off the bottom of the slide; `class: text-xs` changes nothing | seriph's table cell padding and element font sizes override the class | Copy `templates/base/style.css`; split the slide if it still overflows (§2d) |
+| A Mermaid diagram is cut off at the right/bottom | Wide flowchart inside a narrow grid column | Put it full-width below the text, `{scale: 0.6}` (§2b Step 4) |
+| `pnpm -v` after `corepack enable pnpm` fails: `Cannot find module .../corepack/v1/pnpm/<ver>/bin/pnpm.cjs` | Older corepack (e.g. 0.31 in Node 22.14) can't run pnpm ≥ 11's package layout | `corepack disable pnpm && npm i -g pnpm` (with nvm this needs no sudo) |
 | `gh: command not found`; `sudo` via `!` says "a terminal is required" | gh not installed; `!` commands have no TTY for the sudo password | Repo creation on github.com, or the user installs gh in their own terminal |
 
 ## Fixing someone else's deck
