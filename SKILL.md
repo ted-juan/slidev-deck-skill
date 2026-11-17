@@ -1,14 +1,16 @@
 ---
 name: slidev-deck
-description: Build, polish, and publish a presentation as a Slidev web deck (Markdown → website + downloadable PDF), deployed to GitHub Pages or Netlify. Covers the project skeleton (pnpm, seriph theme, playwright PDF export), reusable components (Pic photo card, Credit attribution, optional animated Taiwan JourneyMap), advanced Slidev features applied without touching the talk's wording (transitions, v-clicks reveals, v-mark emphasis, QR code; speaker notes only with the speaker's input), the base-path asset() helper that keeps images working under /<repo>/, a GitHub Pages workflow that actually honours --base, and the traps that produced blank pages / broken images / 404 on /2. Also covers fixing someone else's deployed deck without touching their speaking content. Use when the user asks to make/beautify slides or a presentation (簡報/投影片), turn a Markdown or text draft into a deck, publish slides to GitHub Pages or Netlify, or debug a Slidev deck that shows a blank page or missing images once deployed.
+description: Build, polish, and publish a presentation as a Slidev web deck (Markdown → website + downloadable PDF), deployed to GitHub Pages or Netlify. Covers the project skeleton and a starter slides.md (pnpm, seriph theme, playwright PDF export), an automatic image plan for every slide that needs a visual (free-licence Wikimedia Commons photos with credit lines, agent-drawn diagrams/charts, or AI-generated images via the agent's own image tool or OpenAI/Gemini when asked), reusable components (Pic photo card, Credit attribution, optional animated Taiwan JourneyMap), advanced Slidev features applied without touching the talk's wording (transitions, v-clicks reveals, v-mark emphasis, QR code; speaker notes only with the speaker's input), the base-path asset() helper that keeps images working under /<repo>/, a GitHub Pages workflow that actually honours --base, and the traps that produced blank pages / broken images / 404 on /2. Also covers fixing someone else's deployed deck without touching their speaking content. Use when the user asks to make/beautify slides or a presentation (簡報/投影片), turn a Markdown or text draft into a deck, publish slides to GitHub Pages or Netlify, or find or generate pictures, diagrams or charts for slides, or debug a Slidev deck that shows a blank page or missing images once deployed.
 ---
 
 # Slidev deck: build → polish → publish
 
-Reference project this was distilled from: `~/project/slides/rebecca`
-(repo `ted-juan/six-grand-endless-wonders`, live at
+Reference deck this was distilled from: repo
+https://github.com/ted-juan/six-grand-endless-wonders (live at
 https://ted-juan.github.io/six-grand-endless-wonders/). When in doubt, read
-how it does something before inventing a new way.
+how it does something there (e.g. its raw `slides.md` via
+`https://raw.githubusercontent.com/ted-juan/six-grand-endless-wonders/main/slides.md`)
+before inventing a new way.
 
 ## Golden rule: the speaker's content wins
 
@@ -39,8 +41,10 @@ Copy `templates/base/` from this skill into the new project dir:
 | `components/Pic.vue` | Photo card with corner label: `<Pic src="/photos/x.jpg" label="..." class="h-28" />` |
 | `components/Credit.vue` | Small bottom-right attribution line: `<Credit>Author (CC BY-SA 4.0), via Wikimedia Commons</Credit>` |
 | `.github/workflows/deploy.yml` | GitHub Pages deploy (see §4) |
+| `slides.md` | Starter deck: cover, two-column content slide with `<Pic>` stack, single-photo slide, closing slide with QR. Replace every `__PLACEHOLDER__`; delete slide types the talk doesn't need |
 
-Then `pnpm install`, write `slides.md`, `pnpm dev` to preview.
+Then `pnpm install`, put the speaker's draft into `slides.md` (keep the
+original as `slides.original.md`), add pictures (§2b), `pnpm dev` to preview.
 
 ## 2. Authoring conventions
 
@@ -60,8 +64,88 @@ Then `pnpm install`, write `slides.md`, `pnpm dev` to preview.
   Wikimedia Commons (free licences) and credit each one on its slide with
   `<Credit>` — author + licence + "via Wikimedia Commons". The user's own
   photos get "*Photo / Taken by our group*" (or similar) instead.
+  To find them automatically, see §2b.
 
-## 2b. Advanced Slidev features — use them, but by the content rule
+## 2b. Pictures for every slide that needs one (automatic)
+
+Go through the **whole deck**, not just the topic: decide for each slide
+whether it needs a visual, and which kind. Never invent facts to justify a
+picture; the subject comes from words already on the slide.
+
+### Step 1: image plan (show it to the user before making anything)
+
+Make one table row per slide:
+`# | slide title | needs a visual? | kind | source | file`.
+
+| Slide contains | Visual kind | Source (in order of preference) |
+|---|---|---|
+| Already has a picture, map, chart, code or a full table | none | skip; don't crowd it |
+| Title-only section break, quote, agenda | usually none (or a background) | Commons photo as `background:` if it fits |
+| Cover / closing slide | full-bleed background | Commons photo, `--orientation landscape` |
+| A real place, building, object, species, artwork, event | photo | Commons (`find-image.mjs`). The user's own photos win if they have them |
+| Steps, process, architecture, timeline, before→after, comparison | diagram | Mermaid block, or an SVG drawn by the agent into `public/diagrams/` |
+| Numbers the slide already states (cost, %, counts) | chart | SVG or Mermaid chart using **exactly** those numbers |
+| An idea with no real subject ("teamwork", "our goal", "challenges") | illustration | AI image (Step 3), else a simple agent-drawn SVG/icon (`i-ph-*` icons are built in) |
+
+Wait for the user to OK or edit the plan, then go slide by slide.
+
+### Step 2: real photos from Wikimedia Commons (default for real subjects)
+
+`scripts/find-image.mjs` from this skill (Node ≥ 18, no install). Run it
+from the deck directory so `image-credits.json` lands there. Use English or
+the local name, plus city/country to disambiguate.
+
+```bash
+node <skill>/scripts/find-image.mjs --query "Longshan Temple Taipei" --list
+node <skill>/scripts/find-image.mjs --query "Longshan Temple Taipei" --pick 0 \
+     --out public/photos/longshan.jpg            # --orientation landscape for covers
+```
+
+It downloads a ~1280–1600 px JPEG (kept under ~800 KB), prints JSON with a
+ready `credit` string, and appends to `image-credits.json`.
+
+### Step 3: AI-generated images (ask first, abstract subjects only)
+
+Use the first route the current agent actually has. Check, don't assume.
+
+| Route | When it exists | Notes |
+|---|---|---|
+| The agent's own image tool | Google Antigravity (built-in Nano Banana), Gemini CLI with the `nanobanana` extension, or any connected image-generation MCP tool | Save the output into `public/photos/`. Claude Code and Gemini Code Assist in VS Code have **no** built-in raster image generator |
+| `find-image.mjs --source ai` | `OPENAI_API_KEY` (default `gpt-image-2`) or `GEMINI_API_KEY` (default `gemini-2.5-flash-image`); override with `SLIDEV_IMAGE_MODEL` | Works from any agent, including Claude Code. Each image costs money |
+| Agent-drawn SVG | always | Flat icon-style illustration or diagram, free. Good enough for most concept slides |
+
+```bash
+node <skill>/scripts/find-image.mjs --source ai \
+     --prompt "flat illustration of students planning a trip on a map, no text" \
+     --out public/photos/planning.jpg
+```
+
+- Prompt: describe the slide's idea + "no text, no logos, no watermarks" +
+  one shared style for the whole deck (e.g. "flat pastel illustration") so
+  the pictures match each other.
+- Never generate a fake photo of a real place, person, logo or event that
+  the talk presents as real. Use a photo or a diagram for those.
+- Credit as `AI-generated image (<model>)` in the slide's `<Credit>`.
+- `--source auto` = Commons first, AI fallback when a key is set.
+
+### Step 4: check and insert
+
+1. **Look at every image** (open the file) before using it. Wrong place,
+   watermark, text baked into the picture, a recognisable private person in
+   close-up, or style that clashes → `--pick` the next one, change the query,
+   or regenerate.
+2. Insert with `<Pic src="/photos/x.jpg" label="..." />` (label = the
+   slide's own wording) or `<img :src="$asset('/diagrams/x.svg')" />`, and add
+   the `credit` string to the slide's `<Credit>`.
+3. Adding visuals is layout, so the content rule still holds:
+   `git diff slides.md` shows only `<Pic>`/`<img>`/`<Credit>`/Mermaid/frontmatter
+   lines. If a slide has no room for a picture without shrinking the text,
+   say so and skip it rather than cutting words.
+
+Commit `image-credits.json` with the deck: it records where every picture
+came from and its licence.
+
+## 2c. Advanced Slidev features — use them, but by the content rule
 
 A deck that is just static pages wastes Slidev. On every new deck (and when
 polishing an existing one) **propose** the features below, in this order.

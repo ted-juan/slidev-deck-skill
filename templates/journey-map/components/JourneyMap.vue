@@ -1,10 +1,11 @@
 <!--
-  JourneyMap — 一天行程的動態路線圖（區域地圖 + 左側時間軸）。
-  用法：<JourneyMap :day="1" />，並在該頁 frontmatter 設定 clicks = 站數（= 段數 + 1）。
-    click 0      ：全日總覽（只有站點）
-    click 1..N-1 ：鏡頭飛到第 k 段，交通工具沿弧線移動並畫出路線
-    click N      ：全日總覽（所有路線）
-  底圖：內政部鄉鎮市區界（taiwan-atlas, MIT），已預先投影成 data/taiwan-map.json。
+  JourneyMap — animated route map for one day of an itinerary (regional map + timeline on the left).
+  Usage: <JourneyMap :day="1" />, and set clicks = number of stops (= legs + 1) in that slide's frontmatter.
+    click 0      : day overview (stops only)
+    click 1..N-1 : camera flies to leg k; the vehicle moves along an arc and draws the route
+    click N      : day overview (all routes)
+  Basemap: Taiwan township boundaries from taiwan-atlas (MIT, Ministry of the Interior data),
+  pre-projected into data/taiwan-map.json.
 -->
 <script setup lang="ts">
 import { useSlideContext } from '@slidev/client'
@@ -25,7 +26,7 @@ const legCount = computed(() => stops.value.length - 1)
 const { $clicks } = useSlideContext()
 const step = computed(() => Math.max(0, Math.min(legCount.value + 1, $clicks.value ?? 0)))
 
-// ---------------------------------------------------------------- projection (same as tools/geo.py)
+// ---------------------------------------------------------------- projection (must match how taiwan-map.json was projected; params in geo.proj)
 const P = geo.proj
 function proj(lon: number, lat: number): [number, number] {
   return [(lon - P.lon0) * P.cos * P.k, -(lat - P.lat0) * P.k]

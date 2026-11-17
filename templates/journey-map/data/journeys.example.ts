@@ -1,6 +1,6 @@
-// 三天行程的路線資料，給 components/JourneyMap.vue 使用。
-// 座標是 [經度, 緯度]；leg = 「從上一站到這一站」用的交通方式與說明。
-// 同一地點出現兩次（例如 Day 3 回到台中）也沒關係，地圖上會共用同一個標記。
+// Route data for a 3-day itinerary, used by components/JourneyMap.vue.
+// Coordinates are lon/lat; leg = how you got here from the previous stop (mode + note).
+// The same place may appear twice (e.g. back to Taichung on Day 3); it shares one marker on the map.
 
 export type Mode = 'walk' | 'train' | 'bus' | 'coach'
 
@@ -10,7 +10,7 @@ export interface Stop {
   lon: number
   lat: number
   thumb?: string
-  /** 地圖上標籤放哪一側 */
+  /** Which side of the marker the label goes on */
   side?: 'left' | 'right' | 'top' | 'bottom'
   leg?: { mode: Mode, note: string }
 }
@@ -26,7 +26,7 @@ export const journeys: Record<number, Stop[]> = {
   1: [
     { name: 'Ximending & Longshan Temple', time: '07:00', lon: 121.5035, lat: 25.0397, thumb: '/photos/longshan.jpg', side: 'bottom' },
     { name: 'Shifen Old Street', time: 'Afternoon', lon: 121.7756, lat: 25.0418, thumb: '/photos/shifen.jpg', side: 'bottom', leg: { mode: 'train', note: 'TRA · Pingxi Line' } },
-    { name: 'Jiufen Old Street', time: 'Dusk', lon: 121.8437, lat: 25.1093, thumb: '/jiufen.jpg', side: 'left', leg: { mode: 'bus', note: 'Bus over the hills' } },
+    { name: 'Jiufen Old Street', time: 'Dusk', lon: 121.8437, lat: 25.1093, thumb: '/photos/jiufen.jpg', side: 'left', leg: { mode: 'bus', note: 'Bus over the hills' } },
     { name: 'Ningxia Night Market', time: 'Evening', lon: 121.5153, lat: 25.0563, thumb: '/photos/ningxia.jpg', side: 'top', leg: { mode: 'bus', note: 'Bus back to Taipei' } },
   ],
   2: [

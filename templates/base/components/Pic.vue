@@ -1,4 +1,4 @@
-<!-- 景點照片：圖片 + 左下角標籤。用 class 控制高度，例如 <Pic src="/photos/x.jpg" label="..." class="h-32" /> -->
+<!-- Photo card: image + bottom-left label. Set the height with class, e.g. <Pic src="/photos/x.jpg" label="..." class="h-32" /> -->
 <script setup lang="ts">
 import { asset } from '../setup/asset'
 defineProps<{ src: string, label?: string }>()

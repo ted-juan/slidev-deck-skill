@@ -30,15 +30,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # --download 會在建置時匯出 PDF，需要 Chromium
+      # --download exports the PDF during the build, which needs Chromium
       - name: Install Chromium for PDF export
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Build
         run: pnpm exec slidev build --download --base /${{ github.event.repository.name }}/
 
-      # GitHub Pages 沒有 SPA rewrite；直接開 /2 這類網址會 404。
-      # 用 index.html 當 404.html，讓 Slidev 的前端路由接手。
+      # GitHub Pages has no SPA rewrite, so opening a URL like /2 directly gives 404.
+      # Serving index.html as 404.html lets Slidev's client-side router take over.
       - name: SPA fallback
         run: cp dist/index.html dist/404.html
 
