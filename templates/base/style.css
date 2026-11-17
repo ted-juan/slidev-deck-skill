@@ -7,3 +7,14 @@
 /* Make class: text-sm / text-xs actually shrink body text and tables */
 .slidev-layout.text-sm :is(p, li, td, th, blockquote) { font-size: 0.95rem; line-height: 1.5; }
 .slidev-layout.text-xs :is(p, li, td, th, blockquote) { font-size: 0.8rem; line-height: 1.4; }
+
+/* "### Section · Subtitle" kicker above "## Title": a small muted breadcrumb, not a second heading,
+   so the slide title is clearly the biggest text (seriph styles h3 almost as large as h2). */
+.slidev-layout h3:has(+ h2) {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  opacity: 0.55;
+  margin-bottom: 0.15rem;
+}

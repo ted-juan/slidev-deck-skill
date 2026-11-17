@@ -56,8 +56,8 @@ try {
       if (!root) return [{ what: 'slide not found', by: 0 }]
       const box = root.getBoundingClientRect()
       const hits = []
-      for (const el of root.querySelectorAll('h1,h2,h3,p,li,table,tr,pre,img,svg,figure,blockquote,.mermaid')) {
-        if (el.closest('svg') && el.tagName.toLowerCase() !== 'svg') continue // inside an SVG
+      for (const el of root.querySelectorAll('*')) { // everything: Mermaid draws outside its own div
+        if (el.classList.contains('slidev-layout')) continue
         const r = el.getBoundingClientRect()
         if (!r.width || !r.height) continue
         const down = r.bottom - box.bottom; const right = r.right - box.right

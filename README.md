@@ -28,6 +28,7 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | Journey map | Optional animated Taiwan itinerary map that moves one leg per click |
 | Publish | GitHub Pages workflow (correct `--base`, PDF export, SPA `404.html`), or Netlify CLI |
 | Wording check | `check-wording.mjs` proves every sentence of the draft is still in the deck, in order, and lists every word the deck added |
+| Auto layout | `fit-slides.mjs` keeps one font size across the deck and shrinks only a slide that overflows (never below 0.85; else split it). Half-empty slides get a small picture or a diagram from their own words, or stay white |
 | Layout check | `check-overflow.mjs` measures every slide in a real browser and names the element that runs off the edge; then a PNG look for what can't be measured |
 | Editable PPTX | `slidev export --format pptx-editable` for colleagues who edit in PowerPoint (real text boxes, not pictures) |
 | Verify | Checks the live site with `curl` instead of trusting a green Actions run |
@@ -39,6 +40,7 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 |---|---|
 | `SKILL.md` | Instructions the agent reads (workflow, conventions, trap list) |
 | `scripts/check-wording.mjs` | Draft vs deck: missing, reordered and added text. Node ≥ 18, no dependencies |
+| `scripts/fit-slides.mjs` | One font size for the deck: shrinks only overflowing slides (min 0.85), lists slides to split; no zoom on `v-mark` slides |
 | `scripts/check-overflow.mjs` | Finds slides whose content runs off the edge, using the deck's own Slidev + Playwright |
 | `scripts/find-image.mjs` | Picture finder: Wikimedia Commons search + download, or AI generation; prints a ready `<Credit>` line. Node ≥ 18, no dependencies |
 | `templates/base/` | Project skeleton: `slides.md`, `style.css`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/`, `components/Pic.vue`, `components/Credit.vue`, `.github/workflows/deploy.yml` |
@@ -116,7 +118,9 @@ Real places, people and events always get a real photo, never an AI image.
 | Opening or refreshing `/2` gives a 404 | GitHub Pages has no SPA rewrite, so no `404.html` fallback |
 | Build job passes, deploy job fails | Pages Source is not set to **GitHub Actions** in repo Settings |
 | PDF export can't find a browser | pnpm blocked Playwright's postinstall script |
-| Tables or diagrams cut off at the slide edge | seriph's tall table rows; wide Mermaid charts in a narrow column |
+| Tables or diagrams cut off at the slide edge | seriph's tall table rows; wide Mermaid charts in a narrow column or on a zoomed slide |
+| Hand-drawn marks in the wrong place in the PDF | `v-mark` on a zoomed slide |
+| Highlighted words hidden under solid yellow | Opaque highlight colour; use `#facc1559` (with alpha) |
 | `pnpm` fails after `corepack enable pnpm` | Older corepack can't run pnpm ≥ 11 |
 
 `SKILL.md` lists the full cause and fix for each.

@@ -79,6 +79,9 @@ original as `slides.original.md`), add pictures (§2b), `pnpm dev` to preview.
   slide's frontmatter, which scales the whole slide; then `class: text-sm` /
   `text-xs`; then split the slide. Never cut words to make it fit.
 - Slide header pattern: `### Section · Subtitle` kicker above `## Title`.
+  `style.css` shrinks the kicker to a muted breadcrumb; without it seriph
+  draws the h3 almost as big as the h2 and viewers read the hierarchy as
+  upside down ("the subtitle is bigger than the title").
 - Dense content slides: `class: text-sm` + a two-column
   `grid grid-cols-[1fr_230px]` with bullets left and a stack of `<Pic>` right.
 - Closing slide: `layout: cover` with its own background.
@@ -114,6 +117,7 @@ Make one table row per slide:
 | Steps, process, architecture, timeline, before→after, comparison | diagram | Mermaid block, or an SVG drawn by the agent into `public/diagrams/` |
 | Numbers the slide already states (cost, %, counts) | chart | SVG or Mermaid chart using **exactly** those numbers |
 | An idea with no real subject ("teamwork", "our goal", "challenges") | illustration | AI image (Step 3), else a simple agent-drawn SVG/icon (`i-ph-*` icons are built in) |
+| **Mostly empty** (content ends above ~65% of the height at the deck's normal font size) | small picture beside the text, a diagram / big-number boxes built from the slide's own words, **or just white space**. Never enlarge the text to fill it | Decide yourself, no need to ask per slide: steps or a sequence → Mermaid; numbers the text states → stat boxes; an idea → small AI illustration in the deck's shared style; a real subject → Commons. Layout: `<div class="grid grid-cols-[1fr_360px] gap-8 items-center">` text, then `<Pic … class="h-64" />` |
 
 Wait for the user to OK or edit the plan, then go slide by slide.
 
@@ -190,8 +194,8 @@ speaker.
 | Feature | Syntax | When | Policy |
 |---|---|---|---|
 | Slide transitions | headmatter `transition: slide-left` (per slide: frontmatter `transition: fade`) | Every deck | Apply by default |
-| Reveal points one by one | Wrap a Markdown list in `<v-clicks>` … `</v-clicks>` (blank line after the opening tag and before the closing tag). For non-list rows, put `<v-clicks>` *inside* the flex/grid container around the row `<div>`s so the layout is kept | Itinerary/agenda lists, multi-row explainer slides | Apply by default, mention it to the user |
-| Hand-drawn emphasis | `<span v-mark.underline.orange>NT$ 1,531</span>` (`.circle`, `.highlight`, `.box`; any colour name). Without a value it fires on the next click, after any `v-clicks` items above it in the page | The one key number/claim per slide (cost, total, date) | Apply by default; wrap existing text only, never retype it |
+| Reveal points one by one | Wrap a Markdown list in `<v-clicks>` … `</v-clicks>` (blank line after the opening tag and before the closing tag). For non-list rows, put `<v-clicks>` *inside* the flex/grid container around the row `<div>`s so the layout is kept | Itinerary/agenda lists, multi-row explainer slides. **Not tables**: row-by-row tables annoyed the presenter; reveal a table row by row only if asked | Apply by default, mention it to the user |
+| Hand-drawn emphasis | `<span v-mark.underline.orange>NT$ 1,531</span>` (`.circle`, `.box`; any colour name). For text that can wrap use the object form with `multiline: true`: `<span v-mark="{ type: 'underline', color: 'orange', multiline: true }">`. **Highlight needs a see-through colour** (8-digit hex, alpha ~35%): `<span v-mark="{ type: 'highlight', color: '#facc1559', multiline: true }">` — never `.highlight.yellow`, which paints solid yellow over the words. Without a value it fires on the next click, after any `v-clicks` items above it in the page | The one key number/claim per slide (cost, total, date) | Apply by default; wrap existing text only, never retype it |
 | QR code to the live deck | Generate once with the `qrcode` npm library in a scratch dir: `npm i qrcode@1.5.4` then `node -e "require('qrcode').toFile('<deck>/public/qr.svg','<live URL>',{type:'svg',margin:1},e=>{if(e)throw e})"` (the `npx qrcode` CLI hung in testing). On the closing slide: `<div class="absolute bottom-6 left-6"><img :src="$asset('/qr.svg')" class="w-20 rounded bg-white p-1" /></div>`, which keeps it clear of `<Credit>` at bottom-right | Decks that are published | Apply after the URL exists |
 | Speaker notes + presenter mode | HTML comment at the end of a slide: `<!-- what to say -->`. Present with `p` key (or `/presenter`): notes, next-slide preview and timer | Any talk | **Ask first.** The speaker writes the notes; never invent them |
 | `layout: image-right` / `image-left` with `image:` | Slide frontmatter | One big photo next to text | Ask first (changes the layout the speaker knows) |
@@ -208,37 +212,50 @@ Rules of thumb:
   `<span v-mark…>`), frontmatter, and the QR image. No word of the talk
   changed.
 
-## 2d. Check every slide fits — measure, then look
+## 2d. Fit every slide, then check — measure, then look
 
-`pnpm dev` hides problems you only see at the real slide size. Before
-calling the deck done (and after adding pictures or changing fonts), run
-`scripts/check-overflow.mjs` in the deck directory. It starts the deck's
-dev server, opens every slide in its final click state with the deck's
-`playwright-chromium`, and lists each element that runs past the bottom or
-right edge (exit code 1 if any):
+`pnpm dev` hides problems you only see at the real slide size. After the
+content and pictures are in (and after changing fonts), run these in the
+deck directory. Each one starts its own Slidev server and uses the deck's
+`playwright-chromium`; ~1–2 s per slide.
 
-```bash
-cd <deck> && node <skill>/scripts/check-overflow.mjs      # ~1 s per slide
-```
+1. **Auto-fit** (decide the layout yourself; don't ask the user per slide):
+   ```bash
+   node <skill>/scripts/fit-slides.mjs        # --dry to only report
+   ```
+   **One font size for the whole deck.** Text that jumps between big and
+   small from slide to slide looks uneven, so sparse slides are never
+   enlarged to fill the space: white space is fine, or add a small picture
+   (§2b). The script removes per-slide `class: text-sm/xs` and `zoom:`,
+   leaves every slide at zoom 1, and shrinks only a slide that overflows,
+   just enough to fit and never below 0.85. Slides that still overflow at
+   0.85 are listed: split them (same words, same order). Only frontmatter
+   changes, through Slidev's own parser. Two exceptions it handles:
+   - **Slides with `v-mark` never get a zoom** (see Traps: the marks are
+     drawn in the wrong place in PDF/PNG/PPTX). If one overflows it gets
+     `class: text-sm` (one step, no further) instead.
+   - **Slides with Mermaid**: zooming them above 1 makes the diagram render
+     wider than measured and it gets cut at the right edge (moot now that
+     nothing is enlarged, but keep it in mind if you raise `--max`).
+2. **Overflow check** (exit code 1 if any element runs past the bottom or
+   right edge; measures every element, including Mermaid's SVG):
+   ```bash
+   node <skill>/scripts/check-overflow.mjs
+   ```
+   Fix what it reports: smaller `{scale: …}` on a diagram, move a wide
+   diagram below the text, `class: text-sm`, or split the slide (same order,
+   same words). Re-run.
+3. **Look** at every slide — the scripts can't judge readability, marker
+   placement or balance:
+   ```bash
+   pnpm exec slidev export --format png --output shots      # open the PNGs
+   ```
+   Check: `v-mark` marks sit on their words, diagrams readable and in the
+   right order, pictures well cropped, `<Credit>` not covering content, no
+   slide still half empty (→ §2b "Still mostly empty"). Delete `shots/`.
 
-```
-slide 4  2.1 與其他工具比較
-   63px past bottom: <table> HermesOpenClawOpenCodeClaude Code...
-   147px past bottom: <p> † Claude Code 具備 CLAUDE.md ...
-```
-
-Fix in this order, re-running after each: `zoom: 0.9`/`0.8` in that slide's
-frontmatter → `class: text-sm`/`text-xs` → move a wide diagram below the
-text → split the slide (same order, same words).
-
-Then **look** at the slides the script can't judge (diagrams readable,
-photos well cropped, `<Credit>` not covering content):
-
-```bash
-pnpm exec slidev export --format png --output shots --range 2,13   # open the PNGs
-```
-
-Delete `shots/` afterwards (don't commit it).
+If the user has `pnpm dev` open in a browser while you run these, tell them
+to hard-reload the tab afterwards (see Traps).
 
 ## 3. Optional: animated journey map (Taiwan itineraries)
 
@@ -323,6 +340,11 @@ body contains the deck `<title>`). Actions status without `gh`:
 | A long table or text runs off the bottom of the slide; `class: text-xs` changes nothing | seriph's table cell padding and element font sizes override the class | `zoom: 0.8` in that slide's frontmatter fixes most; keep `templates/base/style.css` for compact tables; split the slide if it still overflows. `check-overflow.mjs` finds them (§2d) |
 | A Mermaid diagram is cut off at the right/bottom | Wide flowchart inside a narrow grid column | Put it full-width below the text, `{scale: 0.6}` (§2b Step 4) |
 | `pnpm -v` after `corepack enable pnpm` fails: `Cannot find module .../corepack/v1/pnpm/<ver>/bin/pnpm.cjs` | Older corepack (e.g. 0.31 in Node 22.14) can't run pnpm ≥ 11's package layout | `corepack disable pnpm && npm i -g pnpm` (with nvm this needs no sudo) |
+| Open browser tab suddenly shows raw text ("Enter fullscreen", "Go to next slide"), a huge credit line mid-slide, wrong heading sizes; a fresh tab is fine | The tab lost its UnoCSS styles after other Slidev processes (export, check-overflow, a second dev server) re-optimized the shared `node_modules/.vite` cache while `pnpm dev` was serving | Hard-reload the tab (Ctrl+Shift+R) or restart `pnpm dev`. Before telling the user to look, reload; after running exports/checks next to their open tab, warn them to reload |
+| `v-mark` underline/highlight drawn in the wrong place (offset, wrong length, across a diagram) in exported PDF/PNG/PPTX | The slide has `zoom:` (Slidev's or CSS `zoom`); rough-notation measures in unzoomed coordinates | No zoom on slides with `v-mark` (`fit-slides.mjs` enforces it); use `class: text-sm` to shrink instead |
+| A `v-mark.highlight` turns into a big yellow block when the marked text wraps to a second line | Rough-notation draws one box around a multi-line span unless told otherwise | `<span v-mark="{ type: 'highlight', color: '#facc1559', multiline: true }">` (`multiline` also for underlines) |
+| Highlighted words are hidden under solid yellow | Rough-notation's SVG is drawn on top of the text, and a colour name like `yellow` is fully opaque | Use a colour with alpha, e.g. `#facc1559` (yellow at ~35%); check the PNG that the words are readable |
+| Mermaid diagram cut at the right edge only on zoomed slides; `check-overflow` said fine | Mermaid sizes the SVG at render time; zoom > 1 makes it wider than measured, and the SVG is not inside `div.mermaid` | Keep Mermaid slides at zoom ≤ 1, shrink with `{scale: …}`; the checker now measures all elements |
 | `gh: command not found`; `sudo` via `!` says "a terminal is required" | gh not installed; `!` commands have no TTY for the sudo password | Repo creation on github.com, or the user installs gh in their own terminal |
 
 ## Fixing someone else's deck
