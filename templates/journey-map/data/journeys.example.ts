@@ -14,7 +14,7 @@ export interface Stop {
   side?: 'left' | 'right' | 'top' | 'bottom'
   leg?: { mode: Mode, note: string }
   /** Animation on this stop's scene card (SceneEffect.vue): pick one that matches the place */
-  effect?: 'jiaobei' | 'lanterns' | 'steam' | 'sparkle' | 'petals'
+  effect?: 'jiaobei' | 'incense' | 'lanterns' | 'steam' | 'sparkle' | 'petals' | 'plane'
   /** Optional caption in the effect box. Added text: confirm it with the speaker */
   effectLabel?: string
 }

@@ -247,6 +247,7 @@ that is already busy (a dense table) or solemn.
 | A cover subtitle / quote / command (one short line) | `<TypeIn>` | `<p><TypeIn>3-Day Northern to Central Taiwan</TypeIn></p>` |
 | A full-width or hero photo | `<Pic motion="kenburns">` (wide: `pan`; diagram/before-after: `reveal`) | `<Pic src="/photos/lukang.jpg" motion="kenburns" class="h-72" />` |
 | Lanterns, festivals, wishes | `<Particles kind="lantern" />` | over the cover photo or a Shifen picture |
+| Temples, shrines | `<Particles kind="smoke" />` (incense) | over the temple photo |
 | Food, drinks, hot springs, markets | `<Particles kind="steam" class="absolute …" :count="4" />` | placed over the food photo, not over text |
 | Money, prices, savings | `<Particles kind="coin" :count="5" />` | beside the budget table |
 | Gardens, spring, blossoms / autumn | `petal` / `leaf` | |
@@ -256,7 +257,9 @@ that is already busy (a dense table) or solemn.
 
 **Invent when nothing above fits — that is the expected case, not the
 exception.** Write a new small component in `components/` (SVG shapes +
-CSS keyframes, ≈20–80 lines, no new npm packages, no external URLs). Ideas
+CSS keyframes, ≈20–80 lines, no new npm packages, no external URLs). Examples already invented for decks: `Stagger` (agenda cards rise in
+one by one) and `CoachRide` (a coach drives a dashed road between two
+place names) in the reference deck's `components/`. More ideas
 to get going: a train or bus icon crossing the slide along a dashed line
 (transport legs), a clock hand sweeping to the stated time, bars growing to
 the slide's own numbers, a stamp landing on "Day 2", a bubble-tea cup
@@ -381,7 +384,8 @@ outlines, ~840 KB), and `data/journeys.example.ts` → `data/journeys.ts`.
   stop's scene opens. Last click: overview of all routes.
 - **Per-stop effect** — give every stop whose place suggests one an
   `effect` (decide it yourself, from the place itself): `jiaobei` (moon blocks
-  tossed → 聖筊, any temple), `lanterns` (Shifen/Pingxi, festivals), `steam`
+  tossed → 聖筊, any temple), `incense` (temple smoke), `plane` (airports,
+  departure: a plane takes off with a contrail), `lanterns` (Shifen/Pingxi, festivals), `steam`
   (night markets, food, hot springs), `sparkle` (viewpoints, night views,
   the final stop), `petals` (gardens, blossoms). `effectLabel` adds a caption
   → added text, confirm it. A place that needs something new (a train

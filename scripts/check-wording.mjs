@@ -15,7 +15,8 @@ const [origPath, deckPath] = process.argv.slice(2)
 if (!origPath || !deckPath) { console.error('usage: check-wording.mjs <original.md> <slides.md>'); process.exit(2) }
 
 // wrappers and motion components we add (their text content is the speaker's and is kept)
-const OUR_TAGS = /<\/?(span|div|p|br|v-clicks|v-click|Credit|Pic|figure|figcaption|CountUp|TypeIn|Particles|SceneEffect|JourneyMap)\b[^>]*>/g
+// (any PascalCase tag = a Vue component: Pic, CountUp, Particles and the ones invented per deck)
+const OUR_TAGS = /<\/?(span|div|p|br|img|v-clicks|v-click|figure|figcaption|[A-Z][A-Za-z0-9]*)\b[^>]*>/g
 const norm = t => t
   .replace(OUR_TAGS, '')
   .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links -> text
@@ -32,7 +33,7 @@ const deckProse = deck
   .replace(/^---\n[\s\S]*?\n---\n/, '\n') // headmatter
   .replace(/\n---\n(?:[a-zA-Z][\w-]*:.*\n)+---\n/g, '\n') // per-slide frontmatter
   .replace(/```mermaid[\s\S]*?```/g, '')
-  .replace(/<(img|Pic|Particles|JourneyMap)\b[^>]*\/?>/g, '')
+  .replace(/<(img|[A-Z][A-Za-z0-9]*)\b[^>]*\/>/g, '') // self-closing components and images carry no words
 
 const D = norm(deck)
 const O = norm(orig)

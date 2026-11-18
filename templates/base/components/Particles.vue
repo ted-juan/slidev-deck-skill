@@ -3,7 +3,7 @@
   It fills its nearest positioned parent; give the parent `relative`, or pass a class:
     <Particles kind="lantern" />                                  sky lanterns rising (Shifen, festivals)
     <Particles kind="steam" class="absolute left-0 bottom-0 w-40 h-32" :count="4" />   steam over food
-  kinds: lantern, steam, sparkle, petal, leaf, coin, bubble, snow, confetti, heart
+  kinds: lantern, steam, smoke (incense), sparkle, petal, leaf, coin, bubble, snow, confetti, heart
   Runs only while the slide is on screen; exports show a frozen, scattered frame.
   Keep it subtle: few particles, away from body text (put it over a photo or an empty side).
 -->
@@ -11,7 +11,7 @@
 import { computed } from 'vue'
 import { useMotion } from '../setup/motion'
 
-type Kind = 'lantern' | 'steam' | 'sparkle' | 'petal' | 'leaf' | 'coin' | 'bubble' | 'snow' | 'confetti' | 'heart'
+type Kind = 'lantern' | 'steam' | 'smoke' | 'sparkle' | 'petal' | 'leaf' | 'coin' | 'bubble' | 'snow' | 'confetti' | 'heart'
 const props = withDefaults(defineProps<{ kind: Kind, count?: number, seed?: number, speed?: number }>(), {
   count: 7, seed: 1, speed: 1,
 })
@@ -23,6 +23,8 @@ const KINDS: Record<Kind, { dir: 'up' | 'down' | 'twinkle', dur: [number, number
     svg: '<path d="M4 3h12l2 17a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="currentColor"/><path d="M6 5h8l1 13H5z" fill="#fff7d6" opacity=".55"/><ellipse cx="10" cy="24.5" rx="2" ry="1.6" fill="#fde047"/>' },
   steam: { dir: 'up', dur: [3.5, 5.5], size: [16, 26], spin: 0, colors: ['#ffffff', '#e2e8f0'],
     svg: '<path d="M10 26C3 20 17 15 10 9 5 5 13 2 10 -1" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>' },
+  smoke: { dir: 'up', dur: [5, 8], size: [14, 22], spin: 0, colors: ['#cbd5e1', '#94a3b8'],
+    svg: '<path d="M10 26C3 20 17 15 10 9 5 5 13 2 10 -1" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/>' },
   sparkle: { dir: 'twinkle', dur: [1.6, 2.8], size: [10, 20], spin: 45, colors: ['#fde047', '#fbbf24', '#ffffff'],
     svg: '<path d="M10 0l2.2 7.8L20 10l-7.8 2.2L10 20l-2.2-7.8L0 10l7.8-2.2z" fill="currentColor"/>' },
   petal: { dir: 'down', dur: [7, 11], size: [10, 16], spin: 300, colors: ['#f9a8d4', '#fbcfe8', '#fda4af'],
@@ -69,7 +71,7 @@ const items = computed(() => {
   <div class="particles" :class="[`p-${k.dir}`, `p-kind-${kind}`, { paused: !play }]" aria-hidden="true">
     <svg
       v-for="p in items" :key="p.i" class="p" :style="p.style"
-      :viewBox="kind === 'lantern' ? '0 0 20 27' : kind === 'steam' ? '0 -2 20 30' : '0 0 20 20'" v-html="k.svg"
+      :viewBox="kind === 'lantern' ? '0 0 20 27' : kind === 'steam' || kind === 'smoke' ? '0 -2 20 30' : '0 0 20 20'" v-html="k.svg"
     />
   </div>
 </template>
@@ -82,13 +84,13 @@ const items = computed(() => {
 .p-down .p { top: -12%; animation-name: p-down; }
 .p-twinkle .p { animation-name: p-twinkle; animation-timing-function: ease-in-out; }
 .p-kind-lantern .p { filter: drop-shadow(0 0 6px rgba(251, 191, 36, .85)); }
-.p-kind-steam .p { filter: blur(1.2px); }
+.p-kind-steam .p, .p-kind-smoke .p { filter: blur(1.2px); }
 @keyframes p-up {
   0% { transform: translate(0, 0) rotate(0); opacity: 0; }
   12%, 80% { opacity: .9; }
   100% { transform: translate(var(--dx), -125cqh) rotate(var(--spin)); opacity: 0; }
 }
-.p-kind-steam .p { animation-name: p-steam; }
+.p-kind-steam .p, .p-kind-smoke .p { animation-name: p-steam; }
 @keyframes p-steam {
   0% { transform: translate(0, 0) scale(.7); opacity: 0; }
   25% { opacity: .75; }

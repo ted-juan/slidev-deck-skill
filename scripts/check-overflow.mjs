@@ -28,6 +28,7 @@ try { ({ chromium } = createRequire(join(deck, 'package.json'))('playwright-chro
 catch { console.error('error: playwright-chromium not installed in the deck (pnpm add -D playwright-chromium)'); process.exit(2) }
 
 const url = `http://localhost:${a.port}`
+try { await fetch(url); console.error(`error: port ${a.port} is already in use (an old Slidev server?) — stop it or pass --port`); process.exit(2) } catch {}
 const server = spawn(bin, [entry, '--port', a.port], { cwd: deck, stdio: 'ignore', detached: true })
 const stop = () => { try { process.kill(-server.pid) } catch {} }
 process.on('exit', stop)

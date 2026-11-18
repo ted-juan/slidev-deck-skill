@@ -26,6 +26,7 @@ if (!existsSync(bin)) { console.error('error: run this in the deck directory aft
 const { chromium } = createRequire(join(deck, 'package.json'))('playwright-chromium')
 
 const url = `http://localhost:${a.port}`
+try { await fetch(url); console.error(`error: port ${a.port} is already in use (an old Slidev server?) — stop it or pass --port`); process.exit(2) } catch {}
 const server = spawn(bin, [entry, '--port', a.port], { cwd: deck, stdio: 'ignore', detached: true })
 const stop = () => { try { process.kill(-server.pid) } catch {} }
 process.on('exit', stop)
@@ -45,6 +46,7 @@ const SEL = '.countup, .typein, .particles, [class*="pic-"], figure img, .journe
 let found = 0
 for (let n = 1; n <= total; n++) {
   await page.goto(`${url}/${n}`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(700) // let the slide mount before looking for motion
   const kind = await page.evaluate(({ n, SEL }) => {
     const root = document.querySelector(`.slidev-page-${n}`)
     if (!root) return null
@@ -75,3 +77,5 @@ for (let n = 1; n <= total; n++) {
 await browser.close()
 console.log(found ? `\n${found} animated slides → ${a.out}/` : 'no animated slides found')
 if (errors.length) { console.log('\npage errors:'); for (const e of [...new Set(errors)]) console.log('  ' + e); process.exitCode = 1 }
+stop()
+process.exit(process.exitCode ?? 0) // the detached dev server would otherwise keep node alive

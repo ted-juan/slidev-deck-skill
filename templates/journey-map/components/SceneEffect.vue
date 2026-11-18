@@ -1,16 +1,21 @@
 <!--
   SceneEffect — a small animation played on a JourneyMap scene card when the traveller arrives at a stop.
-  Set it per stop in data/journeys.ts:  effect: 'jiaobei' | 'lanterns' | 'steam' | 'sparkle' | 'petals'
+  Set it per stop in data/journeys.ts:  effect: 'jiaobei' | 'incense' | 'lanterns' | 'steam' | 'sparkle' | 'petals' | 'plane'
   and optionally effectLabel: '...' (a caption in the corner — it is added text, so confirm it with the speaker).
     jiaobei  : two moon blocks tossed and landing as 聖筊 (temples: Longshan, Tianhou, Mazu)
+    incense  : incense smoke curling up (any temple; quieter than jiaobei)
     lanterns : sky lanterns rising (Shifen, Pingxi, festivals)
     steam    : steam rising (night markets, food stalls, hot springs)
     sparkle  : twinkles (viewpoints, night views, "arrived!")
     petals   : falling blossoms (gardens, cherry blossoms, parks)
+    plane    : a plane takes off across the card with a contrail (airports, departure)
   Add a new effect the same way: one more v-if block + its CSS, or reuse <Particles kind="..." />.
 -->
 <script setup lang="ts">
+import { useMotion } from '../setup/motion'
+
 defineProps<{ name: string, label?: string }>()
+const { play } = useMotion()
 </script>
 
 <template>
@@ -18,6 +23,11 @@ defineProps<{ name: string, label?: string }>()
   <Particles v-else-if="name === 'steam'" kind="steam" :count="6" class="steam-zone" />
   <Particles v-else-if="name === 'sparkle'" kind="sparkle" :count="9" />
   <Particles v-else-if="name === 'petals'" kind="petal" :count="10" :speed="1.4" />
+  <Particles v-else-if="name === 'incense'" kind="smoke" :count="5" class="steam-zone" />
+  <svg v-else-if="name === 'plane'" class="plane-fx" :class="{ go: play }" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+    <path class="trail" d="M-20 210 Q 180 170 420 20" pathLength="1" />
+    <g class="plane"><path d="M0 -4 L26 -2 Q32 0 26 2 L0 4 L-6 12 L-10 12 L-6 4 L-16 4 L-20 8 L-22 8 L-20 0 L-22 -8 L-20 -8 L-16 -4 L-6 -4 L-10 -12 L-6 -12 Z" fill="#fff" stroke="#334155" stroke-width="1.2" /></g>
+  </svg>
 
   <div v-if="name === 'jiaobei' || label" class="fx-box">
     <svg v-if="name === 'jiaobei'" viewBox="0 0 120 76" width="110" height="70">
@@ -43,6 +53,14 @@ defineProps<{ name: string, label?: string }>()
 
 <style scoped>
 .steam-zone { inset: auto 0 0 0 !important; height: 60% !important; }
+/* plane: final frame = plane parked top-right with a full contrail; while playing it flies in along the trail */
+.plane-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+.trail { fill: none; stroke: rgba(255, 255, 255, .75); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.plane { offset-path: path('M-20 210 Q 180 170 420 20'); offset-distance: 88%; offset-rotate: auto; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+.go .trail { animation: trail 2.2s cubic-bezier(.45,0,.2,1) both; }
+.go .plane { animation: fly 2.2s cubic-bezier(.45,0,.2,1) both; }
+@keyframes trail { from { stroke-dashoffset: 1; } to { stroke-dashoffset: .12; } }
+@keyframes fly { from { offset-distance: 0%; } to { offset-distance: 88%; } }
 .fx-box { position: absolute; right: 12px; bottom: 12px; padding: 8px 12px; border-radius: 10px; z-index: 6;
   background: rgba(15, 23, 42, .82); border: 1px solid rgba(251, 191, 36, .45); backdrop-filter: blur(6px);
   display: flex; flex-direction: column; align-items: center; gap: 2px; }
