@@ -99,9 +99,10 @@ async function measure(n) {
     const box = root.getBoundingClientRect()
     let bottom = 0; let right = 0
     const positioned = el => { for (let e = el; e && e !== root; e = e.parentElement) { const p = getComputedStyle(e).position; if (p === 'absolute' || p === 'fixed') return true } return false }
+    const clipped = el => { for (let e = el.parentElement; e && e !== root; e = e.parentElement) { if (getComputedStyle(e).overflow !== 'visible') return true } return false } // inside overflow:hidden (maps, Particles): the clipping box is measured instead
     for (const el of root.querySelectorAll('*')) { // everything: Mermaid draws outside its own div
       if (el.closest('.slidev-layout') !== null && el.classList.contains('slidev-layout')) continue
-      if (positioned(el)) continue
+      if (positioned(el) || clipped(el)) continue
       const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue
       bottom = Math.max(bottom, r.bottom - box.top); right = Math.max(right, r.right - box.left)
     }

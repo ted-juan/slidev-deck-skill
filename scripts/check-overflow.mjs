@@ -56,8 +56,9 @@ try {
       if (!root) return [{ what: 'slide not found', by: 0 }]
       const box = root.getBoundingClientRect()
       const hits = []
+      const clipped = el => { for (let e = el.parentElement; e && e !== root; e = e.parentElement) { if (getComputedStyle(e).overflow !== 'visible') return true } return false } // inside overflow:hidden (maps, Particles): the clipping box is measured instead
       for (const el of root.querySelectorAll('*')) { // everything: Mermaid draws outside its own div
-        if (el.classList.contains('slidev-layout')) continue
+        if (el.classList.contains('slidev-layout') || clipped(el)) continue
         const r = el.getBoundingClientRect()
         if (!r.width || !r.height) continue
         const down = r.bottom - box.bottom; const right = r.right - box.right

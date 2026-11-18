@@ -14,7 +14,8 @@ import { readFileSync } from 'node:fs'
 const [origPath, deckPath] = process.argv.slice(2)
 if (!origPath || !deckPath) { console.error('usage: check-wording.mjs <original.md> <slides.md>'); process.exit(2) }
 
-const OUR_TAGS = /<\/?(span|div|p|br|v-clicks|v-click|Credit|Pic|figure|figcaption)\b[^>]*>/g
+// wrappers and motion components we add (their text content is the speaker's and is kept)
+const OUR_TAGS = /<\/?(span|div|p|br|v-clicks|v-click|Credit|Pic|figure|figcaption|CountUp|TypeIn|Particles|SceneEffect|JourneyMap)\b[^>]*>/g
 const norm = t => t
   .replace(OUR_TAGS, '')
   .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links -> text
@@ -31,7 +32,7 @@ const deckProse = deck
   .replace(/^---\n[\s\S]*?\n---\n/, '\n') // headmatter
   .replace(/\n---\n(?:[a-zA-Z][\w-]*:.*\n)+---\n/g, '\n') // per-slide frontmatter
   .replace(/```mermaid[\s\S]*?```/g, '')
-  .replace(/<(img|Pic)\b[^>]*\/?>/g, '')
+  .replace(/<(img|Pic|Particles|JourneyMap)\b[^>]*\/?>/g, '')
 
 const D = norm(deck)
 const O = norm(orig)

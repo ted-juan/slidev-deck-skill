@@ -1,6 +1,6 @@
 ---
 name: slidev-deck
-description: Build, polish, and publish a presentation as a Slidev web deck (Markdown → website + downloadable PDF), deployed to GitHub Pages or Netlify, plus an editable PowerPoint (pptx-editable) for people who edit in PowerPoint. Covers the project skeleton and a starter slides.md (pnpm, seriph theme, playwright PDF export), an automatic image plan for every slide that needs a visual (free-licence Wikimedia Commons photos with credit lines, agent-drawn diagrams/charts, or AI-generated images via the agent's own image tool or OpenAI/Gemini when asked), reusable components (Pic photo card, Credit attribution, optional animated Taiwan JourneyMap), advanced Slidev features applied without touching the talk's wording (transitions, v-clicks reveals, v-mark emphasis, QR code; speaker notes only with the speaker's input), the base-path asset() helper that keeps images working under /<repo>/, a GitHub Pages workflow that actually honours --base, and scripts that prove no word of the talk changed (check-wording) and no slide overflows (check-overflow), and the traps that produced blank pages / broken images / 404 on /2. Also covers fixing someone else's deployed deck without touching their speaking content. Use when the user asks to make/beautify slides or a presentation (簡報/投影片), turn a Markdown or text draft into a deck, publish slides to GitHub Pages or Netlify, or find or generate pictures, diagrams or charts for slides, or debug a Slidev deck that shows a blank page or missing images once deployed.
+description: Build, polish, and publish a presentation as a Slidev web deck (Markdown → website + downloadable PDF), deployed to GitHub Pages or Netlify, plus an editable PowerPoint (pptx-editable) for people who edit in PowerPoint. Covers the project skeleton and a starter slides.md (pnpm, seriph theme, playwright PDF export), an automatic image plan for every slide that needs a visual (free-licence Wikimedia Commons photos with credit lines, agent-drawn diagrams/charts, or AI-generated images via the agent's own image tool or OpenAI/Gemini when asked), reusable components (Pic photo card, Credit attribution, optional animated Taiwan JourneyMap with a walking traveller, scene zoom-ins and per-stop effects), creative micro-animations invented per slide from its own subject (count-up numbers, typed subtitles, sky lanterns / steam / petals / coins drifting, Ken Burns photos, custom SVG+CSS animations), advanced Slidev features applied without touching the talk's wording (transitions, v-clicks reveals, v-mark emphasis, QR code; speaker notes only with the speaker's input), the base-path asset() helper that keeps images working under /<repo>/, a GitHub Pages workflow that actually honours --base, and scripts that prove no word of the talk changed (check-wording) and no slide overflows (check-overflow), and the traps that produced blank pages / broken images / 404 on /2. Also covers fixing someone else's deployed deck without touching their speaking content. Use when the user asks to make/beautify slides or a presentation (簡報/投影片), turn a Markdown or text draft into a deck, publish slides to GitHub Pages or Netlify, or find or generate pictures, diagrams or charts for slides, or debug a Slidev deck that shows a blank page or missing images once deployed.
 ---
 
 # Slidev deck: build → polish → publish
@@ -47,6 +47,9 @@ The words on the slides are the presenter's. Polish **presentation**
   `ADDED` lists every piece of text the deck has that the draft doesn't
   (cover title, kickers, picture labels, credits): show it to the user
   and get each one confirmed.
+- Motion is presentation, so micro-animations (§2d) are applied by default —
+  but any **words** an animation brings with it (a caption, a badge such as
+  "Arrived", an `effectLabel`) are added text and go on the `ADDED` list.
 
 ## 1. Scaffold
 
@@ -60,6 +63,8 @@ Copy `templates/base/` from this skill into the new project dir:
 | `setup/asset.ts`, `setup/main.ts` | Base-path helper, exposed as `asset()` in components and `$asset()` in Markdown |
 | `components/Pic.vue` | Photo card with corner label: `<Pic src="/photos/x.jpg" label="..." class="h-28" />` |
 | `components/Credit.vue` | Small bottom-right attribution line: `<Credit>Author (CC BY-SA 4.0), via Wikimedia Commons</Credit>` |
+| `setup/motion.ts` | `useMotion()` → `play` (slide is on screen live) / `still` (export, overview, reduced motion). Every animation uses it, so exports always show the final frame |
+| `components/CountUp.vue`, `TypeIn.vue`, `Particles.vue` | Micro-animation building blocks (§2d). `Pic.vue` also takes `motion="kenburns" \| "pan" \| "reveal"` |
 | `.github/workflows/deploy.yml` | GitHub Pages deploy (see §4) |
 | `style.css` | Compact table rows, and makes `class: text-sm` / `text-xs` really shrink body text and tables (seriph's defaults are too tall: a 10-row table runs off the slide). Slidev loads it automatically |
 | `slides.md` | Starter deck: cover, two-column content slide with `<Pic>` stack, single-photo slide, closing slide with QR. Replace every `__PLACEHOLDER__`; delete slide types the talk doesn't need |
@@ -72,11 +77,13 @@ original as `slides.original.md`), add pictures (§2b), `pnpm dev` to preview.
 - Headmatter: `theme: seriph`, a full-bleed cover `background:`, `title:`,
   and `exportFilename:` (becomes the PDF name on the download button).
 - **Fonts**: for Chinese (or mixed Chinese/English) decks set
-  `fonts: { sans: Noto Sans TC, serif: Noto Serif TC, mono: Fira Code }`
+  `fonts: { sans: 'Noto Sans,Noto Sans TC', serif: 'Noto Serif,Noto Serif TC', mono: Fira Code }`
   (Google Fonts, auto-loaded; use `SC` for Simplified, `JP` for Japanese).
+  Latin font **first**: with only `Noto Sans TC`, English apostrophes and
+  quotes (`Taipei’s`) are drawn full-width and look like `Taipei’ s`.
   Without it CJK text falls back to whatever the viewer's system has. The
   starter `slides.md` already sets it. Fonts change text width, so run the
-  overflow check (§2d) after changing them.
+  overflow check (§2e) after changing them.
 - Too much content for one slide: first `zoom: 0.9` (or `0.8`) in that
   slide's frontmatter, which scales the whole slide; then `class: text-sm` /
   `text-xs`; then split the slide. Never cut words to make it fit.
@@ -108,7 +115,7 @@ picture; the subject comes from words already on the slide.
 ### Step 1: image plan (show it to the user before making anything)
 
 Make one table row per slide:
-`# | slide title | needs a visual? | kind | source | file`.
+`# | slide title | needs a visual? | kind | source | file | motion (§2d)`.
 
 | Slide contains | Visual kind | Source (in order of preference) |
 |---|---|---|
@@ -214,7 +221,103 @@ Rules of thumb:
   `<span v-mark…>`), frontmatter, and the QR image. No word of the talk
   changed.
 
-## 2d. Fit every slide, then check — measure, then look
+## 2d. Creative micro-animations — think up at least one per content slide
+
+A deck people remember has small, playful motion that **illustrates what the
+slide already says**: the budget number counts up, sky lanterns drift over
+the Shifen photo, moon blocks land as 聖筊 at the temple, steam curls off the
+night-market snacks. Don't wait to be asked and don't stop at the catalog
+below: for **every** content slide, ask "what one small motion would make
+this slide's own subject come alive?" and build it. Motion changes *how*
+content appears, so it is applied by default (golden rule still holds: no
+new words without confirmation).
+
+### Step 1: put it in the plan
+
+Fill the `motion` column of the §2b plan for every slide, then show the plan.
+Aim for variety across the deck (not lanterns on every slide) and one idea
+per slide that is specific to *that* slide; "none" is fine for a slide
+that is already busy (a dense table) or solemn.
+
+### Step 2: pick from the kit, or invent
+
+| Slide has… | Ready-made (templates/base) | Example |
+|---|---|---|
+| A key number / total / % | `<CountUp>` around the existing text | `<span v-mark.underline.orange><CountUp>NT$ 1,531</CountUp></span>` |
+| A cover subtitle / quote / command (one short line) | `<TypeIn>` | `<p><TypeIn>3-Day Northern to Central Taiwan</TypeIn></p>` |
+| A full-width or hero photo | `<Pic motion="kenburns">` (wide: `pan`; diagram/before-after: `reveal`) | `<Pic src="/photos/lukang.jpg" motion="kenburns" class="h-72" />` |
+| Lanterns, festivals, wishes | `<Particles kind="lantern" />` | over the cover photo or a Shifen picture |
+| Food, drinks, hot springs, markets | `<Particles kind="steam" class="absolute …" :count="4" />` | placed over the food photo, not over text |
+| Money, prices, savings | `<Particles kind="coin" :count="5" />` | beside the budget table |
+| Gardens, spring, blossoms / autumn | `petal` / `leaf` | |
+| Celebration, "thank you", results | `confetti`, `sparkle`, `heart` | closing slide |
+| Water, sea, aquarium, science | `bubble`; winter / mountains: `snow` | |
+| Itinerary, route, day plan | `JourneyMap` (§3) with per-stop `effect` | |
+
+**Invent when nothing above fits — that is the expected case, not the
+exception.** Write a new small component in `components/` (SVG shapes +
+CSS keyframes, ≈20–80 lines, no new npm packages, no external URLs). Ideas
+to get going: a train or bus icon crossing the slide along a dashed line
+(transport legs), a clock hand sweeping to the stated time, bars growing to
+the slide's own numbers, a stamp landing on "Day 2", a bubble-tea cup
+filling, waves under a harbour photo, incense smoke over a temple, a map pin
+dropping and bouncing, an arrow drawing itself between before → after, a
+progress bar across the top for a multi-part section, a magnifier sweeping a
+diagram, a thermometer rising on a weather fact, a heartbeat line on a
+health fact. Pattern to copy:
+
+```vue
+<script setup lang="ts">
+import { useMotion } from '../setup/motion'
+const { play } = useMotion()          // true only while the slide is on screen live
+</script>
+<template>
+  <!-- add the class only while playing; the default render (no class) IS the final frame -->
+  <svg class="motion" :class="{ go: play }" viewBox="0 0 120 40" aria-hidden="true">…</svg>
+</template>
+<style scoped>
+.go .bus { animation: drive 2.4s cubic-bezier(.4,0,.2,1) both; }
+@keyframes drive { from { transform: translateX(-100px); } to { transform: translateX(0); } }
+</style>
+```
+
+### Rules (so the motion delights instead of distracting)
+
+- **Illustrate, don't decorate at random**: the subject comes from words or
+  pictures already on the slide. Never imply a fact the talk doesn't state.
+- **No new words.** An animation may not add captions, numbers or labels
+  unless the user confirms them (they go on the `ADDED` list).
+- **Small and short**: at most 1–2 animations per slide; one-shot motions
+  finish in ≤ 2 s; looping ones (`Particles`, a bob) stay small, few and
+  away from body text — over a photo or an empty side, never behind
+  paragraphs.
+- **Final frame = the static slide.** Build every animation with
+  `useMotion()`: the default render (no `play`) must be the finished state,
+  so PDF/PNG/PPTX exports, the overview grid and reduced-motion viewers see
+  a complete slide. `Particles` freeze mid-flight in exports (scattered,
+  still fine).
+- **Don't fight the click count**: no `v-clicks` on a slide with a
+  `clicks:` frontmatter; `CountUp`/`TypeIn` start when the slide opens, not
+  on a click.
+- **Respect the speaker's tone**: skip playful motion on serious or sad
+  content (memorials, accidents, medical results); use only subtle ones
+  (`reveal`, `kenburns`) there.
+- Wrap only existing text (`<CountUp>NT$ 1,531</CountUp>`): `check-wording`
+  must still pass, and `git diff slides.md` shows only wrappers/components.
+
+### Step 3: see it move
+
+Exports show only the final frame, so check the motion live:
+
+```bash
+node <skill>/scripts/check-motion.mjs        # → shots-motion/<n>-a.png (running) and <n>-b.png (settled)
+```
+
+Open the PNGs: the `a` shot must show the animation in progress, `b` the
+finished slide; nothing may cover text; page errors are printed (exit 1).
+JourneyMap slides get one shot per click. Delete `shots-motion/` after.
+
+## 2e. Fit every slide, then check — measure, then look
 
 `pnpm dev` hides problems you only see at the real slide size. After the
 content and pictures are in (and after changing fonts), run these in the
@@ -268,9 +371,22 @@ outlines, ~840 KB), and `data/journeys.example.ts` → `data/journeys.ts`.
 - Fill `journeys[day]` with stops: `name`, `time`, `lon`, `lat`, optional
   `thumb` (a `/photos/...` path), `side` for the label, and `leg` (`mode` +
   `note`) describing how you got there from the previous stop.
+- Copy `components/SceneEffect.vue` too, and `templates/base/components/Particles.vue`
+  + `setup/motion.ts` if the deck didn't start from `templates/base/`.
 - On the slide: `<JourneyMap :day="1" />`, and in that slide's frontmatter
-  set `clicks:` = number of stops (= legs + 1). Click 0 shows the overview,
-  each click flies the camera along one leg, the last click shows all routes.
+  set `clicks:` = number of stops **+ 1**. Click 0: overview with a mini
+  traveller at the first stop. Click 1: zoom to stop 1 and open its photo
+  scene card (slow Ken Burns zoom). Each next click: back to the map, the
+  traveller walks (vehicle icon for train/bus) along the leg, then that
+  stop's scene opens. Last click: overview of all routes.
+- **Per-stop effect** — give every stop whose place suggests one an
+  `effect` (decide it yourself, from the place itself): `jiaobei` (moon blocks
+  tossed → 聖筊, any temple), `lanterns` (Shifen/Pingxi, festivals), `steam`
+  (night markets, food, hot springs), `sparkle` (viewpoints, night views,
+  the final stop), `petals` (gardens, blossoms). `effectLabel` adds a caption
+  → added text, confirm it. A place that needs something new (a train
+  whistle puff, waves at a harbour, a bubble-tea cup filling) → add a block
+  to `SceneEffect.vue` (§2d "invent").
 - The basemap only covers Taiwan. For other regions you need a different
   pre-projected map JSON with the same `proj` shape.
 
@@ -351,7 +467,7 @@ body contains the deck `<title>`). Actions status without `gh`:
 | Opening / refreshing `/2` gives GitHub's 404 page | GitHub Pages has no SPA rewrite | `cp dist/index.html dist/404.html` in the workflow |
 | Build job ✅, deploy job ❌ | Pages not enabled / Source not set to GitHub Actions | User flips Settings → Pages → Source: GitHub Actions, re-run |
 | `pnpm install` errors about build scripts, or PDF export can't find a browser | pnpm blocks playwright's postinstall | `allowBuilds: playwright-chromium: true` in `pnpm-workspace.yaml`; CI also runs `playwright install --with-deps chromium` |
-| A long table or text runs off the bottom of the slide; `class: text-xs` changes nothing | seriph's table cell padding and element font sizes override the class | `zoom: 0.8` in that slide's frontmatter fixes most; keep `templates/base/style.css` for compact tables; split the slide if it still overflows. `check-overflow.mjs` finds them (§2d) |
+| A long table or text runs off the bottom of the slide; `class: text-xs` changes nothing | seriph's table cell padding and element font sizes override the class | `zoom: 0.8` in that slide's frontmatter fixes most; keep `templates/base/style.css` for compact tables; split the slide if it still overflows. `check-overflow.mjs` finds them (§2e) |
 | A Mermaid diagram is cut off at the right/bottom | Wide flowchart inside a narrow grid column | Put it full-width below the text, `{scale: 0.6}` (§2b Step 4) |
 | `pnpm -v` after `corepack enable pnpm` fails: `Cannot find module .../corepack/v1/pnpm/<ver>/bin/pnpm.cjs` | Older corepack (e.g. 0.31 in Node 22.14) can't run pnpm ≥ 11's package layout | `corepack disable pnpm && npm i -g pnpm` (with nvm this needs no sudo) |
 | Open browser tab suddenly shows raw text ("Enter fullscreen", "Go to next slide"), a huge credit line mid-slide, wrong heading sizes; a fresh tab is fine | The tab lost its UnoCSS styles after other Slidev processes (export, check-overflow, a second dev server) re-optimized the shared `node_modules/.vite` cache while `pnpm dev` was serving | Hard-reload the tab (Ctrl+Shift+R) or restart `pnpm dev`. Before telling the user to look, reload; after running exports/checks next to their open tab, warn them to reload |

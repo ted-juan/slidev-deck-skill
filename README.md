@@ -25,7 +25,8 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | Authoring | Uses a two-column layout, `<Pic>` photo cards, and a `<Credit>` attribution line for Wikimedia Commons photos |
 | Base path | Sends every `/...` image through `asset()` / `$asset()` so the deck still works under `/<repo>/` |
 | Advanced features | Applies slide transitions, one-by-one reveals (`v-clicks`), hand-drawn emphasis on key numbers (`v-mark`), and a QR code to the live deck. Speaker notes are proposed but only written from the speaker's own words |
-| Journey map | Optional animated Taiwan itinerary map that moves one leg per click |
+| Micro-animations | Thinks up at least one small motion per content slide from that slide's own subject, and invents new ones when the kit doesn't fit: count-up numbers, typed subtitles, sky lanterns / steam / petals / coins drifting, Ken Burns photos, custom SVG+CSS components. Exports always show the finished slide; `check-motion.mjs` screenshots the motion live |
+| Journey map | Optional animated Taiwan itinerary map: a mini traveller walks each leg per click, a photo scene card zooms in at every stop, and per-stop effects play (moon blocks at temples, sky lanterns, steam over night markets) |
 | Publish | GitHub Pages workflow (correct `--base`, PDF export, SPA `404.html`), or Netlify CLI |
 | Wording check | `check-wording.mjs` proves every sentence of the draft is still in the deck, in order, and lists every word the deck added |
 | Auto layout | `fit-slides.mjs` keeps one font size across the deck and shrinks only a slide that overflows (never below 0.85; else split it). Half-empty slides get a small picture or a diagram from their own words, or stay white |
@@ -42,9 +43,10 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | `scripts/check-wording.mjs` | Draft vs deck: missing, reordered and added text. Node ≥ 18, no dependencies |
 | `scripts/fit-slides.mjs` | One font size for the deck: shrinks only overflowing slides (min 0.85), lists slides to split; no zoom on `v-mark` slides |
 | `scripts/check-overflow.mjs` | Finds slides whose content runs off the edge, using the deck's own Slidev + Playwright |
+| `scripts/check-motion.mjs` | Screenshots every animated slide while it moves and after it settles (exports only show the final frame); prints page errors |
 | `scripts/find-image.mjs` | Picture finder: Wikimedia Commons search + download, or AI generation; prints a ready `<Credit>` line. Node ≥ 18, no dependencies |
-| `templates/base/` | Project skeleton: `slides.md`, `style.css`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/`, `components/Pic.vue`, `components/Credit.vue`, `.github/workflows/deploy.yml` |
-| `templates/journey-map/` | Optional: `JourneyMap.vue`, pre-projected Taiwan basemap (`taiwan-map.json`, ~840 KB), sample `journeys.example.ts` |
+| `templates/base/` | Project skeleton: `slides.md`, `style.css`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/` (incl. `motion.ts`), `components/Pic.vue` (with `motion`), `components/Credit.vue`, `components/CountUp.vue`, `components/TypeIn.vue`, `components/Particles.vue`, `.github/workflows/deploy.yml` |
+| `templates/journey-map/` | Optional: `JourneyMap.vue`, `SceneEffect.vue`, pre-projected Taiwan basemap (`taiwan-map.json`, ~840 KB), sample `journeys.example.ts` |
 
 ## Install
 
@@ -171,3 +173,4 @@ Real places, people and events always get a real photo, never an AI image.
 - Built on [Slidev](https://sli.dev) and the `seriph` theme.
 - Photos come from [Wikimedia Commons](https://commons.wikimedia.org); each keeps its own author and licence.
 - Taiwan township outlines are derived from [taiwan-atlas](https://github.com/dkaoster/taiwan-atlas) (MIT), with data from Taiwan's Ministry of the Interior.
+- The JourneyMap traveller, scene zoom-in and moon-block (擲筊) animation were first built by 阮紫瑄 in [juanrebecca0823-alt/six-grand-endless-wonders](https://github.com/juanrebecca0823-alt/six-grand-endless-wonders).

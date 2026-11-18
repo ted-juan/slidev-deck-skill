@@ -13,6 +13,10 @@ export interface Stop {
   /** Which side of the marker the label goes on */
   side?: 'left' | 'right' | 'top' | 'bottom'
   leg?: { mode: Mode, note: string }
+  /** Animation on this stop's scene card (SceneEffect.vue): pick one that matches the place */
+  effect?: 'jiaobei' | 'lanterns' | 'steam' | 'sparkle' | 'petals'
+  /** Optional caption in the effect box. Added text: confirm it with the speaker */
+  effectLabel?: string
 }
 
 export const modes: Record<Mode, { label: string, color: string, icon: string }> = {
@@ -24,10 +28,10 @@ export const modes: Record<Mode, { label: string, color: string, icon: string }>
 
 export const journeys: Record<number, Stop[]> = {
   1: [
-    { name: 'Ximending & Longshan Temple', time: '07:00', lon: 121.5035, lat: 25.0397, thumb: '/photos/longshan.jpg', side: 'bottom' },
-    { name: 'Shifen Old Street', time: 'Afternoon', lon: 121.7756, lat: 25.0418, thumb: '/photos/shifen.jpg', side: 'bottom', leg: { mode: 'train', note: 'TRA · Pingxi Line' } },
+    { name: 'Ximending & Longshan Temple', time: '07:00', lon: 121.5035, lat: 25.0397, thumb: '/photos/longshan.jpg', side: 'bottom', effect: 'jiaobei' },
+    { name: 'Shifen Old Street', time: 'Afternoon', lon: 121.7756, lat: 25.0418, thumb: '/photos/shifen.jpg', side: 'bottom', leg: { mode: 'train', note: 'TRA · Pingxi Line' }, effect: 'lanterns' },
     { name: 'Jiufen Old Street', time: 'Dusk', lon: 121.8437, lat: 25.1093, thumb: '/photos/jiufen.jpg', side: 'left', leg: { mode: 'bus', note: 'Bus over the hills' } },
-    { name: 'Ningxia Night Market', time: 'Evening', lon: 121.5153, lat: 25.0563, thumb: '/photos/ningxia.jpg', side: 'top', leg: { mode: 'bus', note: 'Bus back to Taipei' } },
+    { name: 'Ningxia Night Market', time: 'Evening', lon: 121.5153, lat: 25.0563, thumb: '/photos/ningxia.jpg', side: 'top', leg: { mode: 'bus', note: 'Bus back to Taipei' }, effect: 'steam' },
   ],
   2: [
     { name: 'Four Four South Village', time: '09:00', lon: 121.5617, lat: 25.0312, thumb: '/photos/fourfour.jpg', side: 'right' },
