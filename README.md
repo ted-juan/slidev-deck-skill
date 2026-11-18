@@ -48,7 +48,23 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 
 ## Install
 
-Clone the repo into the skills folder your agent reads. The folder must be named `slidev-deck`, with `SKILL.md` directly inside it.
+| Step | What | Needed? |
+|---|---|---|
+| 1 | Node.js ≥ 18 and pnpm | Required |
+| 2 | This skill (`slidev-deck`) | Required |
+| 3 | Official Slidev skill (`slidev`) | Recommended |
+| 4 | Check that the agent sees both | — |
+
+Slidev itself is **not** installed here: each new deck runs `pnpm install` and gets Slidev, the theme and Playwright from npm.
+
+### Step 1: Node.js and pnpm
+
+```bash
+node -v                 # 18 or newer
+npm install -g pnpm     # if `pnpm -v` fails; `corepack enable pnpm` breaks on older corepack
+```
+
+### Step 2: this skill
 
 **Claude Code** (all projects):
 
@@ -63,6 +79,8 @@ git clone https://github.com/ted-juan/slidev-deck-skill.git .agents/skills/slide
 rm -rf .agents/skills/slidev-deck/.git   # commit it as plain files, not a submodule
 ```
 
+The folder must be named `slidev-deck`, with `SKILL.md` directly inside it.
+
 | Agent | Project folder | Personal / global folder |
 |---|---|---|
 | Claude Code | `.claude/skills/` | `~/.claude/skills/` |
@@ -73,17 +91,30 @@ rm -rf .agents/skills/slidev-deck/.git   # commit it as plain files, not a submo
 
 Folder names change between agent versions. If a skill isn't detected, check that agent's current docs.
 
-**Recommended companion:** the official Slidev skill (syntax reference for layouts, components, animations, export flags). This skill defers to it for Slidev syntax and keeps the workflow.
+### Step 3: official Slidev skill (recommended)
+
+Skills don't install each other, so add it yourself. It is the **syntax reference** (layouts, components, animations, export flags) and tracks each Slidev release; this skill keeps the **workflow** (content rule, pictures, layout checks, publishing). Without it everything still works, but the agent writes Slidev syntax from memory.
 
 ```bash
-npx skills add slidevjs/slidev
-# or copy https://github.com/slidevjs/slidev/tree/main/skills/slidev to ~/.claude/skills/slidev
+git clone -q --depth 1 --filter=blob:none --sparse https://github.com/slidevjs/slidev.git /tmp/slidev-src
+git -C /tmp/slidev-src sparse-checkout set skills/slidev
+cp -r /tmp/slidev-src/skills/slidev ~/.claude/skills/slidev   # or <project>/.agents/skills/slidev
+rm -rf /tmp/slidev-src
 ```
 
-To update a global install:
+### Step 4: check
+
+```bash
+ls ~/.claude/skills/slidev-deck/SKILL.md ~/.claude/skills/slidev/SKILL.md
+```
+
+Start a new agent session; in Claude Code, `/slidev-deck` and `/slidev` should both be listed.
+
+### Update
 
 ```bash
 git -C ~/.claude/skills/slidev-deck pull
+# official skill: repeat step 3 (rm -rf ~/.claude/skills/slidev first)
 ```
 
 ## Usage
@@ -121,6 +152,7 @@ Real places, people and events always get a real photo, never an AI image.
 | Tables or diagrams cut off at the slide edge | seriph's tall table rows; wide Mermaid charts in a narrow column or on a zoomed slide |
 | Hand-drawn marks in the wrong place in the PDF | `v-mark` on a zoomed slide |
 | Highlighted words hidden under solid yellow | Opaque highlight colour; use `#facc1559` (with alpha) |
+| Netlify site shows a login page (401) | Account requires Netlify team login for every site |
 | `pnpm` fails after `corepack enable pnpm` | Older corepack can't run pnpm ≥ 11 |
 
 `SKILL.md` lists the full cause and fix for each.

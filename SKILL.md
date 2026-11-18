@@ -19,6 +19,8 @@ flags. This skill owns the **workflow**: the content rule, pictures, layout
 checks, publishing and the traps below. When the two disagree on Slidev
 syntax, the official skill wins (it tracks the current release); when they
 disagree on process, this one wins.
+If it is **not** installed, tell the user once (one line) that it is
+recommended and point to README → Install → Step 3; then carry on without it.
 
 ## Golden rule: the speaker's content wins
 
@@ -310,7 +312,19 @@ pnpm exec slidev export --format pptx-editable --with-clicks=false \
 
 `pnpm run deploy:netlify` (first run: `npx netlify-cli login`, then pick or
 create a site; the link is stored in `.netlify/state.json`). For Netlify the
-deck lives at the domain root, so no `--base` is needed.
+deck lives at the domain root, so no `--base` is needed. Slidev's build
+already writes `dist/_redirects`, so `/2` works.
+
+1. Login opens a browser, so the **user** runs `! npx -y netlify-cli login`.
+2. From the agent, without prompts: `pnpm build`, then
+   `npx -y netlify-cli deploy --prod --dir dist --no-build --site-name <deck>`
+   the first time (creates `<deck>.netlify.app`; later deploys reuse
+   `.netlify/state.json`).
+3. Check with curl (§5). **401 "Login Redirect" on every page** = the account
+   requires Netlify team login for all sites, so only the owner can see it.
+   Make *this* site public only if the user asked for public:
+   `npx -y netlify-cli api updateSite --data '{"site_id":"<deck>.netlify.app","body":{"sso_login":false}}'`.
+   Internal decks: leave the protection on, and say who can open it.
 
 ## 5. Verify the live site — don't trust a green check
 
@@ -346,6 +360,7 @@ body contains the deck `<title>`). Actions status without `gh`:
 | Highlighted words are hidden under solid yellow | Rough-notation's SVG is drawn on top of the text, and a colour name like `yellow` is fully opaque | Use a colour with alpha, e.g. `#facc1559` (yellow at ~35%); check the PNG that the words are readable |
 | Mermaid diagram cut at the right edge only on zoomed slides; `check-overflow` said fine | Mermaid sizes the SVG at render time; zoom > 1 makes it wider than measured, and the SVG is not inside `div.mermaid` | Keep Mermaid slides at zoom ≤ 1, shrink with `{scale: …}`; the checker now measures all elements |
 | `gh: command not found`; `sudo` via `!` says "a terminal is required" | gh not installed; `!` commands have no TTY for the sudo password | Repo creation on github.com, or the user installs gh in their own terminal |
+| Netlify site returns 401 "Login Redirect" on every page | Account-wide "require Netlify team login" | Public on purpose: `updateSite` with `sso_login: false` (§4 Netlify) |
 
 ## Fixing someone else's deck
 
