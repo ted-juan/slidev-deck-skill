@@ -90,7 +90,7 @@ process.on('exit', stop)
 for (let i = 0; i < 120; i++) { try { if ((await fetch(url)).ok) break } catch {} await new Promise(r => setTimeout(r, 500)) }
 
 const browser = await chromium.launch()
-const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: 'reduce' }) // measure the final frame: useMotion() stays still
 async function measure(n) {
   await page.goto(`${url}/${n}?clicks=999`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(500)

@@ -45,7 +45,7 @@ An [Agent Skill](https://agentskills.io) that teaches an AI coding agent to turn
 | `scripts/check-overflow.mjs` | Finds slides whose content runs off the edge, using the deck's own Slidev + Playwright |
 | `scripts/check-motion.mjs` | Screenshots every animated slide while it moves and after it settles (exports only show the final frame); prints page errors |
 | `scripts/find-image.mjs` | Picture finder: Wikimedia Commons search + download, or AI generation; prints a ready `<Credit>` line. Node ≥ 18, no dependencies |
-| `templates/base/` | Project skeleton: `slides.md`, `style.css`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/` (incl. `motion.ts`), `components/Pic.vue` (with `motion`), `components/Credit.vue`, `components/CountUp.vue`, `components/TypeIn.vue`, `components/Particles.vue`, `.github/workflows/deploy.yml` |
+| `templates/base/` | Project skeleton: `slides.md`, `style.css`, `package.json`, `pnpm-workspace.yaml`, `gitignore`, `setup/` (incl. `motion.ts`), `components/Pic.vue` (with `motion`), `components/Credit.vue`, `components/CountUp.vue`, `components/TypeIn.vue`, `components/Particles.vue`, `components/Stagger.vue`, `components/DrawFlow.vue`, `.github/workflows/deploy.yml` |
 | `templates/journey-map/` | Optional: `JourneyMap.vue`, `SceneEffect.vue`, pre-projected Taiwan basemap (`taiwan-map.json`, ~840 KB), sample `journeys.example.ts` |
 
 ## Install

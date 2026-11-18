@@ -47,6 +47,8 @@ let found = 0
 for (let n = 1; n <= total; n++) {
   await page.goto(`${url}/${n}`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(700) // let the slide mount before looking for motion
+  const overlay = await page.evaluate(() => document.querySelector('vite-error-overlay')?.shadowRoot?.querySelector('.message')?.textContent ?? null)
+  if (overlay) { errors.push(`slide ${n}: build error: ${overlay.trim().slice(0, 200)}`); continue }
   const kind = await page.evaluate(({ n, SEL }) => {
     const root = document.querySelector(`.slidev-page-${n}`)
     if (!root) return null

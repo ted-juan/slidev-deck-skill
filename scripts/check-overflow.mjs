@@ -45,7 +45,7 @@ let bad = 0
 try {
   await waitUp()
   const browser = await chromium.launch()
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: 'reduce' }) // measure the final frame: useMotion() stays still
   await page.goto(`${url}/1`, { waitUntil: 'networkidle' })
   const total = await page.evaluate(() => window.__slidev__?.nav?.total ?? 0)
   const tol = Number(a.tolerance)

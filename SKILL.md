@@ -64,7 +64,7 @@ Copy `templates/base/` from this skill into the new project dir:
 | `components/Pic.vue` | Photo card with corner label: `<Pic src="/photos/x.jpg" label="..." class="h-28" />` |
 | `components/Credit.vue` | Small bottom-right attribution line: `<Credit>Author (CC BY-SA 4.0), via Wikimedia Commons</Credit>` |
 | `setup/motion.ts` | `useMotion()` → `play` (slide is on screen live) / `still` (export, overview, reduced motion). Every animation uses it, so exports always show the final frame |
-| `components/CountUp.vue`, `TypeIn.vue`, `Particles.vue` | Micro-animation building blocks (§2d). `Pic.vue` also takes `motion="kenburns" \| "pan" \| "reveal"` |
+| `components/CountUp.vue`, `TypeIn.vue`, `Particles.vue`, `Stagger.vue`, `DrawFlow.vue` | Micro-animation building blocks (§2d). `Pic.vue` also takes `motion="kenburns" \| "pan" \| "reveal"` |
 | `.github/workflows/deploy.yml` | GitHub Pages deploy (see §4) |
 | `style.css` | Compact table rows, and makes `class: text-sm` / `text-xs` really shrink body text and tables (seriph's defaults are too tall: a 10-row table runs off the slide). Slidev loads it automatically |
 | `slides.md` | Starter deck: cover, two-column content slide with `<Pic>` stack, single-photo slide, closing slide with QR. Replace every `__PLACEHOLDER__`; delete slide types the talk doesn't need |
@@ -254,12 +254,16 @@ that is already busy (a dense table) or solemn.
 | Celebration, "thank you", results | `confetti`, `sparkle`, `heart` | closing slide |
 | Water, sea, aquarium, science | `bubble`; winter / mountains: `snow` | |
 | Itinerary, route, day plan | `JourneyMap` (§3) with per-stop `effect` | |
+| Agenda cards, icon rows, or a comparison table | `<Stagger>` (children, or a table's body rows, rise in one by one) | `<Stagger class="grid grid-cols-2 gap-4">…</Stagger>`; around a table: blank line, table, blank line |
+| A Mermaid flowchart (process, pipeline, loop) | `<DrawFlow>` (boxes pop in in reading order, arrows draw themselves) | blank line, the ```` ```mermaid ```` block, blank line, inside `<DrawFlow>` |
 
 **Invent when nothing above fits — that is the expected case, not the
 exception.** Write a new small component in `components/` (SVG shapes +
-CSS keyframes, ≈20–80 lines, no new npm packages, no external URLs). Examples already invented for decks: `Stagger` (agenda cards rise in
-one by one) and `CoachRide` (a coach drives a dashed road between two
-place names) in the reference deck's `components/`. More ideas
+CSS keyframes, ≈20–80 lines, no new npm packages, no external URLs). Examples already invented for decks: `CoachRide` (a coach drives a dashed
+road between two place names) in the reference deck's `components/`;
+`ClockSweep` (a clock hand sweeps and pings: polling on a schedule / cron)
+and `RestartPulse` (a heartbeat line goes flat and beats again: a service
+that restarts itself) in the hermes-ai-agent deck. More ideas
 to get going: a train or bus icon crossing the slide along a dashed line
 (transport legs), a clock hand sweeping to the stated time, bars growing to
 the slide's own numbers, a stamp landing on "Day 2", a bubble-tea cup
@@ -267,7 +271,10 @@ filling, waves under a harbour photo, incense smoke over a temple, a map pin
 dropping and bouncing, an arrow drawing itself between before → after, a
 progress bar across the top for a multi-part section, a magnifier sweeping a
 diagram, a thermometer rising on a weather fact, a heartbeat line on a
-health fact. Pattern to copy:
+health fact. Technical talks need it as much as travel ones: think in
+the slide's own nouns (a request travelling between two boxes, a lock
+closing on "protected", a test turning red → green, a queue filling).
+Pattern to copy:
 
 ```vue
 <script setup lang="ts">
@@ -479,6 +486,9 @@ body contains the deck `<title>`). Actions status without `gh`:
 | A `v-mark.highlight` turns into a big yellow block when the marked text wraps to a second line | Rough-notation draws one box around a multi-line span unless told otherwise | `<span v-mark="{ type: 'highlight', color: '#facc1559', multiline: true }">` (`multiline` also for underlines) |
 | Highlighted words are hidden under solid yellow | Rough-notation's SVG is drawn on top of the text, and a colour name like `yellow` is fully opaque | Use a colour with alpha, e.g. `#facc1559` (yellow at ~35%); check the PNG that the words are readable |
 | Mermaid diagram cut at the right edge only on zoomed slides; `check-overflow` said fine | Mermaid sizes the SVG at render time; zoom > 1 makes it wider than measured, and the SVG is not inside `div.mermaid` | Keep Mermaid slides at zoom ≤ 1, shrink with `{scale: …}`; the checker now measures all elements |
+| A component breaks the whole slide ("Invalid end tag" overlay) though its code looks right | Its `<!-- … -->` usage comment contains `-->` (e.g. a Mermaid `A --> B` example), which ends the comment early | No `--` inside HTML comments: write `A ==> B` in examples. `check-motion` now reports Vite error overlays |
+| CSS animation on a Mermaid diagram does nothing | Slidev draws Mermaid inside a **shadow root**; page CSS can't reach its SVG | Inject a `<style>` into `div.mermaid`'s `shadowRoot` and toggle a class on the SVG (see `DrawFlow.vue`). Animate nodes with the CSS `scale`/`opacity` properties, never `transform`: each node is placed by its own `transform="translate(…)"` |
+| `fit-slides` shrinks slides that fit | It measured while animations were mid-flight, or while a slide showed a build-error overlay | The scripts now open pages with `reducedMotion: 'reduce'` (final frame). Run `check-motion` first if you just wrote a component, and fix any build error before fitting |
 | `gh: command not found`; `sudo` via `!` says "a terminal is required" | gh not installed; `!` commands have no TTY for the sudo password | Repo creation on github.com, or the user installs gh in their own terminal |
 | Netlify site returns 401 "Login Redirect" on every page | Account-wide "require Netlify team login" | Public on purpose: `updateSite` with `sso_login: false` (§4 Netlify) |
 
